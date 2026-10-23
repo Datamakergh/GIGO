@@ -49,9 +49,20 @@
     <div id="class-bar" class="class-bar" role="group" aria-label="Object class"></div>
     <div class="stage"><canvas id="annot-canvas" width="800" height="500" aria-label="Road scene to annotate"></canvas></div>
     <p id="hint" class="hint"></p>
+    <details class="fit-help">
+      <summary>How is my box scored?</summary>
+      <p>The <b>fit</b> score says how well your box sits on the object. 100% is exact; 0% means not touching. Too big, too small or shifted lowers it.</p>
+      <ul>
+        <li><b>Under 30%</b>: the AI does not see the object.</li>
+        <li><b>30% to 75%</b>: the AI sees it, but late or unsure, and you score less.</li>
+        <li><b>75% or more</b>: the AI sees it reliably.</li>
+        <li><b>80% or more</b>: full points for that box.</li>
+      </ul>
+    </details>
     <div class="toolbar">
       <button id="btn-delete" type="button" class="ghost" disabled>Delete box</button>
       <button id="btn-clear" type="button" class="ghost">Clear all</button>
+      <button id="btn-labels" type="button" class="ghost" aria-pressed="false" title="Hide the class names on your boxes">Hide labels</button>
       <button id="btn-key" type="button" class="ghost" aria-pressed="false" title="Available after your first run">Show answer key</button>
       <span class="spacer"></span>
       <button id="btn-run" type="button" class="primary">&#9654; Run Simulation</button>

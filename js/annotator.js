@@ -11,7 +11,7 @@ window.GIGO = window.GIGO || {};
     var self = this, ctx = canvas.getContext('2d');
     var W = G.SCENE.width, H = G.SCENE.height, HS = 12, MIN = 8;
     var boxes = [], nextId = 1, selId = null, curCls = G.CLASSES[0].id;
-    var drag = null, locked = false, showKey = false, flash = null, hoverCursor = 'crosshair';
+    var drag = null, locked = false, showKey = false, showLabels = true, flash = null, hoverCursor = 'crosshair';
     var listeners = { change: [], select: [] };
     var Z_MIN = 1, Z_MAX = 4, z = 1, ox = 0, oy = 0, panning = null, spaceDown = false;
 
@@ -199,6 +199,7 @@ window.GIGO = window.GIGO || {};
     };
     self.setLocked = function (v) { locked = v; canvas.style.cursor = v ? 'default' : 'crosshair'; canvas.classList.toggle('locked', v); render(); };
     self.setShowKey = function (v) { showKey = v; render(); };
+    self.setShowLabels = function (v) { showLabels = v; render(); };
     self.flashGT = function (id) {
       flash = { id: id, t0: performance.now() };
       (function tick() { render(); if (flash && performance.now() - flash.t0 < 2400) requestAnimationFrame(tick); else { flash = null; render(); } })();
@@ -237,7 +238,7 @@ window.GIGO = window.GIGO || {};
         var c = G.classColor(b.cls), sel = b.id === selId, k = 1 / z, hs = HS * k;
         ctx.fillStyle = c + '26'; ctx.fillRect(b.x, b.y, b.w, b.h);
         ctx.lineWidth = (sel ? 4 : 3) * k; ctx.strokeStyle = c; ctx.strokeRect(b.x, b.y, b.w, b.h);
-        label(b.cls, b.x, b.y, c);
+        if (showLabels) label(b.cls, b.x, b.y, c);
         if (sel && !locked) {
           handles(b).forEach(function (h) {
             ctx.fillStyle = '#fff'; ctx.strokeStyle = c; ctx.lineWidth = 2 * k;

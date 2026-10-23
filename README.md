@@ -27,14 +27,16 @@ Double-click `index.html` (Chrome, Edge or Firefox). No server, build step, netw
 Scripts are plain `<script>` tags (not ES modules) so the page works from `file://`.
 
 ## Scoring logic (`js/evaluator.js`)
-- **Matching:** each ground-truth object is paired with the user box that overlaps it most (IoU ≥ 0.50), one box per object, highest IoU first.
+**In simple terms:** IoU (shown in the app as "fit") says how well your box sits on the object: 100% is exact, 0% is not touching. Under 30% the AI misses the object; 30–75% it sees it late or unsure and you score less; 75%+ it sees it reliably; 80%+ earns full points. Tighter boxes score higher.
+
+- **Matching:** each ground-truth object is paired with the user box that overlaps it most (IoU ≥ 0.30), one box per object, highest IoU first.
 - **Per-object verdict**
   - `good`: IoU ≥ 0.75 and right class
-  - `poorBox`: 0.50 ≤ IoU < 0.75 and right class (loose)
+  - `poorBox`: 0.30 ≤ IoU < 0.75 and right class (loose)
   - `wrongClass`: located but labelled wrongly
-  - `missing`: no box with IoU ≥ 0.50
+  - `missing`: no box with IoU ≥ 0.30
 - **Extra boxes:** `duplicate` (another box on an already-matched object, −3 points each) or `spurious` (a box on nothing, −4 each).
-- **Credit per object:** 0 if missing; otherwise 0.5 at IoU 0.50 rising linearly to 1.0 at IoU 0.80; ×0.4 if the class is wrong.
+- **Credit per object:** 0 if missing; otherwise 0.3 at IoU 0.30 rising linearly to 1.0 at IoU 0.80; ×0.4 if the class is wrong.
 - **Score** = sum of credits ÷ 10 × 100 − penalties, clamped to 0–100. Ten wrong boxes score 0, not 100.
 - **Bands:** Excellent ≥ 90, Good ≥ 70, Partial ≥ 40, Poor < 40.
 

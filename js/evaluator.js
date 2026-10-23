@@ -14,7 +14,7 @@ window.GIGO = window.GIGO || {};
 
   function boxCredit(iou) {
     var T = G.THRESHOLDS;
-    var q = 0.5 + 0.5 * (iou - T.match) / (T.fullCredit - T.match);
+    var q = 0.3 + 0.7 * (iou - T.match) / (T.fullCredit - T.match);
     return Math.max(0, Math.min(1, q));
   }
 

@@ -175,3 +175,8 @@ button:active:not(:disabled) { transform: translateY(1px) scale(.98); }
 .scene-pick-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
 .scene-pick .seg { background: var(--card); box-shadow: var(--shadow); }
 .seg[hidden] { display: none; }
+
+.fit-help { font-size: 13px; color: var(--muted); margin: 4px 0 10px; }
+.fit-help summary { cursor: pointer; font-weight: 600; }
+.fit-help p, .fit-help ul { margin: 6px 0 0; }
+.fit-help ul { padding-left: 18px; }

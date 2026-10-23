@@ -142,6 +142,11 @@
   $('btn-clear').addEventListener('click', function () {
     if (annot.getBoxes().length && confirm('Remove all of your boxes?')) annot.clear();
   });
+  $('btn-labels').addEventListener('click', function () {
+    var hide = this.getAttribute('aria-pressed') !== 'true';
+    this.setAttribute('aria-pressed', hide ? 'true' : 'false'); this.textContent = hide ? 'Show labels' : 'Hide labels';
+    annot.setShowLabels(!hide);
+  });
   $('btn-key').addEventListener('click', function () {
     var on = this.getAttribute('aria-pressed') !== 'true';
     this.setAttribute('aria-pressed', on ? 'true' : 'false'); annot.setShowKey(on);

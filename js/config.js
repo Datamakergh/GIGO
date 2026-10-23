@@ -20,7 +20,7 @@ window.GIGO = window.GIGO || {};
   G.SCENE = { width: 800, height: 500, horizon: 190 };
 
   G.THRESHOLDS = {
-    match: 0.5,          // IoU needed for a box to count as "on" an object
+    match: 0.3,        // IoU needed for a box to count as "on" an object
     good: 0.75,          // IoU at/above which the simulated AI detects the object reliably
     fullCredit: 0.8,     // IoU at/above which an object earns full box credit
     wrongClassFactor: 0.4,

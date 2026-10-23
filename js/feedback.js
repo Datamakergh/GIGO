@@ -29,14 +29,16 @@ window.GIGO = window.GIGO || {};
     return t ? t.replace(/\{short\}/g, g.short) : '';
   }
 
+  function asPct(v) { return Math.round(v * 100) + '%'; }
+
   function cause(g, r) {
     if (r.verdict === 'missing') {
       return r.bestIoU >= 0.15
-        ? 'You drew a box near it, but it was too loose or shifted (overlap ' + r.bestIoU.toFixed(2) + ', needs 0.50). The model got no usable example.'
+        ? 'You drew a box near it, but it was too loose or shifted (fit ' + asPct(r.bestIoU) + ', needs at least ' + asPct(G.THRESHOLDS.match) + '). The model got no usable example.'
         : 'Your dataset did not include this object in the scene, so the model never learned to see it.';
     }
     if (r.verdict === 'wrongClass') return 'You labelled it "' + r.predCls + '" instead of "' + g.cls + '". A wrong label teaches the model the wrong thing.';
-    if (r.verdict === 'poorBox') return 'Your box only loosely fits the object (overlap ' + r.iou.toFixed(2) + '), so the detection was weak.';
+    if (r.verdict === 'poorBox') return 'Your box only loosely fits the object (fit ' + asPct(r.iou) + '), so the detection was weak.';
     return '';
   }
 
@@ -83,7 +85,7 @@ window.GIGO = window.GIGO || {};
     var chip = el('span', 'band', ev.band.label); chip.style.background = col; b.appendChild(chip);
     b.appendChild(el('span', 'risk', ev.band.risk));
     var c = ev.counts, m = clear($('score-metrics'));
-    [['Accurate boxes', c.good, 'ok'], ['Loose boxes (IoU < 0.75)', c.poorBox, 'warn'], ['Wrong class', c.wrongClass, 'mid'],
+    [['Accurate boxes', c.good, 'ok'], ['Loose boxes (fit under ' + asPct(G.THRESHOLDS.good) + ')', c.poorBox, 'warn'], ['Wrong class', c.wrongClass, 'mid'],
      ['Missing objects', c.missing, 'bad'], ['Duplicate boxes', c.duplicate, 'warn'], ['Boxes on nothing', c.spurious, 'warn']]
       .forEach(function (row) {
         var li = el('li');
@@ -104,7 +106,7 @@ window.GIGO = window.GIGO || {};
       var nm = el('span', 'det-name', r.name);
       if (r.critical) nm.appendChild(el('em', 'tag-crit', 'critical'));
       b.appendChild(nm);
-      b.appendChild(el('span', 'det-iou', r.verdict === 'missing' ? 'no box' : 'IoU ' + r.iou.toFixed(2)));
+      b.appendChild(el('span', 'det-iou', r.verdict === 'missing' ? 'no box' : 'Fit ' + asPct(r.iou)));
       b.addEventListener('click', function () { hooks.onLocate(r.id); });
       li.style.animationDelay = Math.min(ul.children.length * 30, 300) + 'ms';
       li.appendChild(b); ul.appendChild(li);
