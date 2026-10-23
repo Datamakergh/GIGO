@@ -56,6 +56,3 @@ Tuning knobs (speeds, brake force, detection ranges, near-miss gap) are in `P` a
 - **Different scene or objects:** edit `G.GROUND_TRUTH` in `config.js` (box, class, art, sim placement, warning text). Keep boxes non-overlapping so matching stays unambiguous.
 - **Stricter or looser scoring:** edit `G.THRESHOLDS`.
 - **Real detector later:** produce the same `{id: {mode: 'good'|'late'|'missed', conf, label}}` map as `G.buildDetections` returns and pass it to `G.Sim.create`. Nothing else changes.
-
-## Open-source components and licences
-None. The app has no third-party libraries, fonts, images or build tools; all art is drawn in code. The project's own licence is yours to choose.
