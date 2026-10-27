@@ -19,6 +19,9 @@ window.GIGO = window.GIGO || {};
     missing: { chip: 'Missed', cls: 'bad' }
   };
 
+  function isText() { return G.SCENARIO.kind === 'text'; }
+  var TEXT_CHIP = { good: 'Learned', poorBox: 'Weak', wrongClass: 'Mislabelled', missing: 'Unlabelled' };
+
   function gt(id) { return G.GROUND_TRUTH.filter(function (g) { return g.id === id; })[0]; }
 
   /* Why did this object matter in the drive? */
@@ -26,25 +29,29 @@ window.GIGO = window.GIGO || {};
     var res = sim.results[g.id], S = G.SCENARIO;
     if (!g.critical && res === 'missed_warning') return 'Simulated effect: ' + g.warn;
     var t = (g.critical ? S.critical : S.minor)[res];
-    return t ? t.replace(/\{short\}/g, g.short) : '';
+    return t ? t.replace(/\{short\}/g, g.short).replace(/\{alert\}/g, g.alert || 'alert') : '';
   }
 
   function asPct(v) { return Math.round(v * 100) + '%'; }
 
   function cause(g, r) {
+    if (isText()) {
+      if (r.verdict === 'missing') return 'You left it unlabelled.';
+      return 'You marked it ' + r.predCls + ', but it is ' + g.cls + '.';
+    }
     if (r.verdict === 'missing') {
       return r.bestIoU >= 0.15
-        ? 'You drew a box near it, but it was too loose or shifted (fit ' + asPct(r.bestIoU) + ', needs at least ' + asPct(G.THRESHOLDS.match) + '). The model got no usable example.'
-        : 'Your dataset did not include this object in the scene, so the model never learned to see it.';
+        ? 'Your box was too loose to count (fit ' + asPct(r.bestIoU) + ', needs ' + asPct(G.THRESHOLDS.match) + ').'
+        : 'No box, so the model never learned it.';
     }
-    if (r.verdict === 'wrongClass') return 'You labelled it "' + r.predCls + '" instead of "' + g.cls + '". A wrong label teaches the model the wrong thing.';
-    if (r.verdict === 'poorBox') return 'Your box only loosely fits the object (fit ' + asPct(r.iou) + '), so the detection was weak.';
+    if (r.verdict === 'wrongClass') return 'Labelled "' + r.predCls + '" instead of "' + g.cls + '".';
+    if (r.verdict === 'poorBox') return 'Loose box (fit ' + asPct(r.iou) + '), so detection was weak.';
     return '';
   }
 
   function headline(g, r) {
-    if (r.verdict === 'missing') return g.name + ': annotation missing';
-    if (r.verdict === 'wrongClass') return g.name + ': wrong class';
+    if (r.verdict === 'missing') return g.name + (isText() ? ': unlabelled' : ': missing');
+    if (r.verdict === 'wrongClass') return g.name + (isText() ? ': mislabelled' : ': wrong class');
     return g.name + ': box too loose';
   }
 
@@ -52,12 +59,12 @@ window.GIGO = window.GIGO || {};
     var c = ev.counts, out = [];
     var crit = ev.perObject.filter(function (r) { return r.critical && r.verdict !== 'good'; });
     if (crit.length) out.push(G.SCENARIO.advice.critical);
-    if (c.missing) out.push('Annotate every object in the scene, including small or partly hidden ones. Use the "Show answer key" box to compare.');
+    if (c.missing) out.push(isText() ? 'Label every answer. Gaps become "I\u2019m not sure".' : 'Box every object, even small or hidden ones.');
     if (c.wrongClass) out.push(G.SCENARIO.advice.wrongClass);
-    if (c.poorBox) out.push('Draw tight boxes: each edge should just touch the object. Resize with the corner handles.');
-    if (c.duplicate) out.push('Use exactly one box per object and delete the duplicates.');
-    if (c.spurious) out.push('Only box real objects. Boxes on empty space teach the model false detections.');
-    if (!out.length) out.push('Complete, accurate and consistent. This is the data quality real AI systems depend on.');
+    if (c.poorBox) out.push('Draw tight boxes: edges should just touch the object.');
+    if (c.duplicate) out.push('One box per object. Delete duplicates.');
+    if (c.spurious) out.push('Only box real objects.');
+    if (!out.length) out.push('Complete, accurate, consistent. Keep it up.');
     return out;
   }
 
@@ -85,8 +92,9 @@ window.GIGO = window.GIGO || {};
     var chip = el('span', 'band', ev.band.label); chip.style.background = col; b.appendChild(chip);
     b.appendChild(el('span', 'risk', ev.band.risk));
     var c = ev.counts, m = clear($('score-metrics'));
-    [['Accurate boxes', c.good, 'ok'], ['Loose boxes (fit under ' + asPct(G.THRESHOLDS.good) + ')', c.poorBox, 'warn'], ['Wrong class', c.wrongClass, 'mid'],
-     ['Missing objects', c.missing, 'bad'], ['Duplicate boxes', c.duplicate, 'warn'], ['Boxes on nothing', c.spurious, 'warn']]
+    (isText() ? [['Right labels', c.good, 'ok'], ['Wrong labels', c.wrongClass, 'bad'], ['Unlabelled', c.missing, 'warn']]
+      : [['Accurate boxes', c.good, 'ok'], ['Loose boxes', c.poorBox, 'warn'], ['Wrong class', c.wrongClass, 'mid'],
+     ['Missing objects', c.missing, 'bad'], ['Duplicate boxes', c.duplicate, 'warn'], ['Boxes on nothing', c.spurious, 'warn']])
       .forEach(function (row) {
         var li = el('li');
         li.appendChild(el('span', null, row[0]));
@@ -101,17 +109,17 @@ window.GIGO = window.GIGO || {};
     ev.perObject.forEach(function (r) {
       var v = VERDICT[r.verdict], li = el('li');
       var b = el('button', 'det-row'); b.type = 'button';
-      b.title = 'Show where this object is';
-      b.appendChild(el('span', 'chip ' + v.cls, v.chip));
+      b.title = 'Show where this is';
+      b.appendChild(el('span', 'chip ' + v.cls, isText() ? TEXT_CHIP[r.verdict] : v.chip));
       var nm = el('span', 'det-name', r.name);
       if (r.critical) nm.appendChild(el('em', 'tag-crit', 'critical'));
       b.appendChild(nm);
-      b.appendChild(el('span', 'det-iou', r.verdict === 'missing' ? 'no box' : 'Fit ' + asPct(r.iou)));
+      b.appendChild(el('span', 'det-iou', isText() ? (r.predCls || '\u2014') : r.verdict === 'missing' ? 'no box' : 'Fit ' + asPct(r.iou)));
       b.addEventListener('click', function () { hooks.onLocate(r.id); });
       li.style.animationDelay = Math.min(ul.children.length * 30, 300) + 'ms';
       li.appendChild(b); ul.appendChild(li);
     });
-    $('detect-sum').textContent = ev.detected + ' of ' + ev.total + ' objects detected by the simulated AI';
+    $('detect-sum').textContent = ev.detected + ' of ' + ev.total + (isText() ? ' answers learned correctly' : ' objects detected');
     $('detect-empty').hidden = true; $('detect-body').hidden = false;
   }
 
@@ -149,16 +157,16 @@ window.GIGO = window.GIGO || {};
       var li = el('li');
       if (x.type === 'duplicate') {
         li.appendChild(el('strong', null, 'Duplicate box on ' + x.ofName));
-        li.appendChild(el('p', null, 'Two boxes on one object count as inconsistent data and cost points.'));
+        li.appendChild(el('p', null, 'Two boxes on one object cost points.'));
       } else {
         li.appendChild(el('strong', null, 'Box on nothing' + (x.nearName ? ' (near ' + x.nearName + ')' : '')));
-        li.appendChild(el('p', null, 'This box does not match any object, so it would teach the model a false detection.'));
+        li.appendChild(el('p', null, 'Matches no object: teaches a false detection.'));
       }
       ul.appendChild(li); n++;
     });
     if (!n) {
       var li = el('li', 'allgood');
-      li.appendChild(el('strong', null, 'No annotation problems found'));
+      li.appendChild(el('strong', null, 'No problems found'));
       li.appendChild(el('p', null, G.SCENARIO.advice.allGood));
       ul.appendChild(li);
     }
@@ -171,7 +179,7 @@ window.GIGO = window.GIGO || {};
   function renderCompare(history) {
     var tbl = clear($('compare-table')), cur = history[history.length - 1], prev = history[history.length - 2];
     if (!prev) {
-      $('compare-note').textContent = 'This is run 1. Fix your annotations and run again to see a before-and-after comparison.';
+      $('compare-note').textContent = 'Run 1. Fix and run again to compare.';
     } else {
       $('compare-note').textContent = 'Run ' + (history.length - 1) + ' compared with run ' + history.length + '.';
     }
@@ -181,13 +189,13 @@ window.GIGO = window.GIGO || {};
     tbl.appendChild(head);
     var rows = [
       ['Quality score', 'score', true],
-      ['Objects detected', 'detected', true],
+      [isText() ? 'Answers learned' : 'Objects detected', 'detected', true],
       ['Missed or misread', 'missed', false],
       ['Duplicates + extras', 'junk', false],
-      [G.SCENARIO.id === 'road' ? 'Driving outcome' : 'Safety outcome', 'outcomeLabel', null]
+      [G.SCENARIO.outcomeLabel || 'Outcome', 'outcomeLabel', null]
     ];
     var show = function (k, v) { return k === 'detected' ? v + '/' + G.GROUND_TRUTH.length : String(v); };
-    rows.forEach(function (r) {
+    rows.filter(function (r) { return !(isText() && r[1] === 'junk'); }).forEach(function (r) {
       var tr = el('tr'); tr.appendChild(el('th', null, r[0]));
       if (prev) tr.appendChild(el('td', null, show(r[1], prev[r[1]])));
       var td = el('td', null, show(r[1], cur[r[1]]));

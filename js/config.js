@@ -78,13 +78,13 @@ window.GIGO = window.GIGO || {};
 
   G.MESSAGES = {
     outcomes: {
-      safe: { label: 'Completed safely', tone: 'good', text: 'The vehicle detected the relevant objects, slowed or stopped in time and finished the route.' },
-      warnings: { label: 'Completed with warnings', tone: 'warn', text: 'The vehicle finished the route, but some missed or weak detections caused warnings.' },
-      near_miss: { label: 'Near miss', tone: 'bad', text: 'The vehicle avoided a collision only narrowly, or broke a traffic rule, because of missed or late detections.' },
-      collision: { label: 'Simulated collision', tone: 'bad', text: 'A missed detection meant the vehicle did not react, and the simulated drive ended in a collision.' }
+      safe: { label: 'Completed safely', tone: 'good', text: 'Saw everything, stopped in time.' },
+      warnings: { label: 'Completed with warnings', tone: 'warn', text: 'Finished, but weak or missed detections caused warnings.' },
+      near_miss: { label: 'Near miss', tone: 'bad', text: 'Late detection: a narrow escape or a broken rule.' },
+      collision: { label: 'Simulated collision', tone: 'bad', text: 'A missed object meant the car never reacted.' }
     },
-    core: 'Poor data can lead to poor AI decisions. Better data quality helps build more reliable AI systems.',
-    disclaimer: 'Educational simulation: the driving outcome is produced by simple rules from your annotation score. It is not a real AI model, not real inference and not a measured safety result.'
+    core: 'Garbage in, garbage out. Better labels make better AI.',
+    disclaimer: 'Educational simulation driven by simple rules, not a real AI model.'
   };
 
   /* Scenarios. Each one supplies its own classes, ground truth, simulation wording and page text;
@@ -95,26 +95,28 @@ window.GIGO = window.GIGO || {};
       id: 'road', label: 'Road', tagline: 'Train the AI, Drive the Car',
       classes: G.CLASSES, groundTruth: G.GROUND_TRUTH, outcomes: G.MESSAGES.outcomes, disclaimer: G.MESSAGES.disclaimer,
       sim: 'Sim', view: 'SimView', has3d: true,
-      intro: '<b>Your task:</b> box the 10 objects in the road scene, then press <b>Run Simulation</b>. Try a rushed attempt first, then fix it and compare. Leaving things out on purpose is allowed.',
-      garbageOut: 'missed objects, unsafe driving',
+      card: { issue: 'Road safety', title: 'Self-driving car', place: 'City street', blurb: 'Label road users so the car brakes for the right things.',
+        tags: ['Object detection', '2D + 3D sim'] },
+      outcomeLabel: 'Driving outcome',
+      task: 'Box all 10 objects, then run the drive.',
       annotLabel: 'Road scene to annotate',
-      simTitle: 'Autonomous driving simulator',
+      simTitle: 'Driving simulator',
       simLabel: 'Top-down driving simulation',
-      idle: '<strong>The car is waiting.</strong><p>What it can &ldquo;see&rdquo; depends on your annotations. Press <b>Run Simulation</b> to find out.</p>',
-      resultTitle: 'Driving result', resultEmpty: 'Shows what the vehicle did and why.',
+      idle: '<strong>The car is waiting.</strong><p>It only sees what you labelled.</p>',
+      resultTitle: 'Driving result', resultEmpty: 'Run to see the drive.',
       stats: [['Collisions', 'collisions'], ['Near misses', 'nearMisses'], ['Red lights run', 'violations'], ['Late detections', 'lateBrakes'], ['Warnings', 'warnings']],
       critical: {
-        collision: 'In this educational simulation, that contributed to a detection failure and a simulated collision with the {short}.',
-        near_miss: 'In this educational simulation, that contributed to late detection and a near miss with the {short}.',
-        violation: 'In this educational simulation, that contributed to the vehicle running the red light.',
-        late_brake: 'In this educational simulation, the vehicle had to brake late for the {short}.',
-        not_reached: 'The drive ended in an earlier collision, but the {short} would also have been a risk.'
+        collision: 'So the car hit the {short}.',
+        near_miss: 'So the car saw the {short} late: near miss.',
+        violation: 'So the car ran the red light.',
+        late_brake: 'So the car braked late for the {short}.',
+        not_reached: 'The drive ended earlier, but the {short} was also a risk.'
       },
-      minor: { not_reached: 'The drive ended before reaching this object, but the AI would have been unaware of it.' },
+      minor: { not_reached: 'The drive ended before reaching this object.' },
       advice: {
-        critical: 'Start with people and traffic lights. Missing a safety-critical object is the most dangerous error.',
-        wrongClass: 'Check the class before you finish each box. Pedestrians, cyclists and signs are easy to mix up.',
-        allGood: 'Every object was located, labelled correctly and tightly boxed. With reliable training data the simulated AI detected all relevant objects and the vehicle completed the drive safely.'
+        critical: 'Start with people and traffic lights: missing them is the most dangerous error.',
+        wrongClass: 'Check the class on every box. Pedestrians, cyclists and signs are easy to mix up.',
+        allGood: 'Every object found and tightly boxed. The car drove safely.'
       }
     }
   };

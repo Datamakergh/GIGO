@@ -1,30 +1,54 @@
-# GIGO – Train the AI, Drive the Car
+# GIGO – Garbage In, Garbage Out
 
-An interactive browser demo for the SYNAPSE AI Data Annotation Training Programme. Trainees box 10 objects in a road scene, then watch a simulated self-driving car behave according to the quality of their annotations: **Garbage In, Garbage Out**.
+An interactive browser demo for AI data-annotation training. Trainees label a scene, then watch a simulated AI act on their labels. Every missed, loose or wrong label shows up in the outcome.
 
-> Educational simulation. The driving outcome is produced by simple rules from the annotation evaluation. There is no AI model, no inference and no measured safety result.
+> Educational simulation. Outcomes come from simple rules, not a real AI model, real inference or measured safety results.
 
 ## Run it
-Double-click `index.html` (Chrome, Edge or Firefox). No server, build step, network or GPU needed. Tests (optional): `node tests/run.js`.
+Double-click `index.html`, or serve the folder (`python3 -m http.server`). No build step, dependencies or network needed. Tests: `node tests/run.js`.
 
-## How a trainee uses it
-1. Pick a class (buttons or keys 1–5) and drag on the scene to draw a box. Click a box to select it: drag to move, drag the handles to resize, press Delete to remove, pick another class to relabel.
-2. Press **Run Simulation**. Incomplete or sloppy work is allowed on purpose.
-3. Watch the drive, read the feedback, click **Correct my annotations**, run again and compare in "Before and after". "Show answer key" appears after the first run.
+**GitHub Pages:** push the repo and enable Pages on the branch root. All paths are relative and `.nojekyll` is included, so it works as-is.
+
+## Pages
+| Page | What it is |
+|---|---|
+| `index.html` | Overview: hero, how it works, scene teaser |
+| `projects.html` | Gallery of all scenes |
+| `learn.html` | Scoring, scene summary, glossary |
+| `play.html?scene=<id>` | The simulator (`road`, `warehouse`, `drone`, `crop`, `llm`) |
+
+## Scenes
+| Scene | Labels | Simulation | Critical items |
+|---|---|---|---|
+| Self-driving car (`road`) | 10 boxes, 5 classes | Car drives the street (2D/3D) | Lead car, pedestrian, cyclist, red light |
+| Warehouse PPE (`warehouse`) | 12 boxes | AI safety gate checks workers | Workers |
+| Drone census (`drone`), Maasai Mara | 12 boxes, 6 classes | Drone flies transects, live species tally, alerts | Lion near the boma, person setting snares |
+| Maize scout (`crop`), Kenya | 10 leaves, 5 classes | 21-day field timelapse: treatment, spread, yield | Fall Armyworm, Lethal Necrosis |
+| LLM answers (`llm`) | 10 answers, Correct/Wrong | Chatbot answers the same questions | Two unsafe health answers |
+
+Across all scenes: good label = handled well, loose box = late, missing or wrong = not handled. Missing a critical item gives the worst outcome. In the LLM scene, approving a wrong answer makes the bot repeat it (hallucination or unsafe advice), rejecting a right one makes it invent an alternative, and leaving one unlabelled gives "I'm not sure".
 
 ## Files
 | File | Role |
 |---|---|
-| `js/config.js` | Classes, thresholds, the 10 ground-truth objects, simulation placement, wording |
-| `js/scene.js` | Draws the road scene in code (no image files) |
-| `js/annotator.js` | Bounding-box tool |
-| `js/evaluator.js` | IoU, matching, verdicts, score (pure functions) |
-| `js/simulator.js` | Driving rules and state machine (pure, no drawing) |
-| `js/sim-view.js` | Draws the simulation |
-| `js/feedback.js`, `js/app.js` | Results panel and wiring |
-| `tests/run.js` | Node checks for the evaluator and simulation |
+| `js/config.js` | Road scene data, thresholds, `G.SCENARIOS` + `G.useScenario` |
+| `js/scene.js` | Road art; shared helpers (`roundRect`, `rng`, `getSceneCanvas`) |
+| `js/warehouse.js`, `ppe-sim.js`, `ppe-view.js` | Warehouse scene, sim, renderer |
+| `js/drone.js`, `drone-sim.js`, `drone-view.js` | Drone scene, sim, renderer |
+| `js/crop.js`, `crop-sim.js`, `crop-view.js` | Maize scene, sim, renderer |
+| `js/llm.js`, `llm-sim.js`, `llm-view.js` | LLM items, label evaluator + text labeller, chat sim + view |
+| `js/view-kit.js` | Shared canvas helpers for the newer views |
+| `js/annotator.js`, `evaluator.js` | Box tool; IoU, matching, score |
+| `js/simulator.js`, `sim-view.js`, `sim-3d.js` | Road sim and renderers |
+| `js/feedback.js`, `app.js` | Results cards and play-page wiring |
+| `js/nav.js`, `gallery.js` | Site nav and scene cards |
+| `css/styles.css`, `css/site.css` | Simulator styles; site pages and new components |
+| `tests/run.js` | Node checks for every scene |
 
-Scripts are plain `<script>` tags (not ES modules) so the page works from `file://`.
+Scripts are plain `<script>` tags (not ES modules) so pages work from `file://`.
+
+## Add a scene
+Add a file that registers `G.SCENARIOS.<id>` with `classes`, `groundTruth`, `drawScene`, `card`, `outcomes` (keys `safe`, `warnings`, `near_miss`, `collision`), `stats`, `critical`, `minor`, `advice`, and the names of its `sim` and `view`. Then include it in `play.html` and `js/gallery.js`'s order list. Keep ground-truth boxes non-overlapping.
 
 ## Scoring logic (`js/evaluator.js`)
 **In simple terms:** IoU (shown in the app as "fit") says how well your box sits on the object: 100% is exact, 0% is not touching. Under 30% the AI misses the object; 30–75% it sees it late or unsure and you score less; 75%+ it sees it reliably; 80%+ earns full points. Tighter boxes score higher.
@@ -55,6 +79,6 @@ The other six objects (signs, parked car, oncoming car, two pavement pedestrians
 Tuning knobs (speeds, brake force, detection ranges, near-miss gap) are in `P` at the top of `simulator.js`.
 
 ## Modify it
-- **Different scene or objects:** edit `G.GROUND_TRUTH` in `config.js` (box, class, art, sim placement, warning text). Keep boxes non-overlapping so matching stays unambiguous.
+- **Road objects:** edit `G.GROUND_TRUTH` in `config.js`. Keep boxes non-overlapping so matching stays unambiguous.
 - **Stricter or looser scoring:** edit `G.THRESHOLDS`.
 - **Real detector later:** produce the same `{id: {mode: 'good'|'late'|'missed', conf, label}}` map as `G.buildDetections` returns and pass it to `G.Sim.create`. Nothing else changes.

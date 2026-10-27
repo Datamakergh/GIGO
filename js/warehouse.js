@@ -56,7 +56,7 @@ window.GIGO = window.GIGO || {};
       if (!w.wears[it.key]) return;
       GT.push({ id: w.id + '_' + it.key, name: w.name.split(' (')[0] + ': ' + it.noun, short: it.noun, cls: it.cls,
         box: rbox(g[it.key]), of: w.id, item: it.key,
-        warn: 'The AI never learned to see this ' + it.noun + ', so it wrongly flagged ' + w.short + ' as missing it (false alarm).' });
+        warn: 'Unlabelled, so ' + w.short + ' was wrongly flagged as missing the ' + it.noun + '.' });
     });
   });
 
@@ -315,32 +315,34 @@ window.GIGO = window.GIGO || {};
     id: 'warehouse', label: 'Warehouse PPE', tagline: 'Train the AI, Keep the Floor Safe',
     classes: CLASSES, groundTruth: GT, drawScene: drawScene,
     sim: 'PPESim', view: 'PPEView', has3d: false,
+    card: { issue: 'Workplace safety', title: 'Warehouse PPE gate', place: 'Distribution centre', blurb: 'Check workers for hard hats, goggles, vests and boots.',
+      tags: ['Object detection', 'Safety'] },
     outcomes: {
-      safe: { label: 'All checks correct', tone: 'good', text: 'The AI saw every worker, confirmed the PPE they wore and stopped anyone missing equipment.' },
-      warnings: { label: 'Checked with warnings', tone: 'warn', text: 'Nobody unsafe got through, but weak or missing labels caused false alarms, late checks or unchecked entries.' },
-      near_miss: { label: 'Near miss', tone: 'bad', text: 'A worker without full PPE was already inside the hazard zone before the AI caught them.' },
-      collision: { label: 'Safety incident', tone: 'bad', text: 'A missed detection let a worker without full PPE walk into the hazard zone unchecked.' }
+      safe: { label: 'All checks correct', tone: 'good', text: 'Everyone checked, unsafe workers stopped.' },
+      warnings: { label: 'Checked with warnings', tone: 'warn', text: 'No one unsafe got in, but there were false alarms or late checks.' },
+      near_miss: { label: 'Near miss', tone: 'bad', text: 'An unequipped worker was caught inside the zone.' },
+      collision: { label: 'Safety incident', tone: 'bad', text: 'An unequipped worker walked in unseen.' }
     },
-    disclaimer: 'Educational simulation: the safety-gate outcome is produced by simple rules from your annotation score. It is not a real AI model, not real inference and not a measured safety result.',
-    intro: '<b>Your task:</b> box the 12 objects in the warehouse: every worker, plus each piece of safety gear they are actually wearing (hard hat, goggles, hi-vis vest, boots). Then press <b>Run Simulation</b> to watch the AI safety gate check them. Not everyone is fully equipped, so only box what is really there.',
-    garbageOut: 'unseen workers, unsafe entry',
+    outcomeLabel: 'Safety outcome',
+    disclaimer: 'Educational simulation driven by simple rules, not a real AI model.',
+    task: 'Box every worker and only the PPE they really wear (12 objects), then run the gate.',
     annotLabel: 'Warehouse scene to annotate',
-    simTitle: 'AI safety gate simulator',
+    simTitle: 'AI safety gate',
     simLabel: 'Warehouse PPE safety-gate simulation',
-    idle: '<strong>The safety gate is waiting.</strong><p>Which workers and PPE it can &ldquo;see&rdquo; depends on your annotations. Press <b>Run Simulation</b> to find out.</p>',
-    resultTitle: 'Safety gate result', resultEmpty: 'Shows what the safety gate did and why.',
+    idle: '<strong>The gate is waiting.</strong><p>It only sees what you labelled.</p>',
+    resultTitle: 'Safety gate result', resultEmpty: 'Run to see the gate.',
     stats: [['Safety incidents', 'incidents'], ['Near misses', 'nearMisses'], ['False alarms', 'falseAlarms'], ['Late checks', 'lateChecks'], ['Unchecked entries', 'unchecked']],
     critical: {
-      incident: 'In this educational simulation, the AI never saw {short}, so they walked into the hazard zone without the required PPE.',
-      near_miss: 'In this educational simulation, the loose box meant the AI spotted {short} late, after they had already stepped into the zone without full PPE.',
-      late_check: 'The loose box meant the AI spotted {short} late, so the PPE check happened inside the zone instead of at the gate.',
-      unchecked: 'The AI never saw {short}, so they walked into the zone unchecked. They happened to be wearing full PPE this time.'
+      incident: 'Never seen, so {short} walked into the zone without full PPE.',
+      near_miss: 'Loose box: {short} was spotted only inside the zone, without full PPE.',
+      late_check: 'Loose box: {short} was checked inside the zone, not at the gate.',
+      unchecked: 'Never seen, so {short} walked in unchecked (luckily in full PPE).'
     },
-    minor: { not_checked: 'The AI never saw this worker, so this item was never checked.' },
+    minor: { not_checked: 'The worker was never seen, so this item was never checked.' },
     advice: {
-      critical: 'Start with the workers themselves. If the AI cannot see a person, it cannot check their PPE at all.',
-      wrongClass: 'Check the class before you finish each box. Hard hats, goggles and vests sit close together on each worker.',
-      allGood: 'Every worker and every piece of PPE was located, labelled correctly and tightly boxed. The simulated AI checked each worker at the gate and stopped anyone missing equipment.'
+      critical: 'Box the workers first. If the AI cannot see a person, it cannot check their PPE.',
+      wrongClass: 'Check each class: hard hats, goggles and vests sit close together.',
+      allGood: 'Every worker and item found. The gate stopped everyone missing PPE.'
     }
   };
 })(window.GIGO);

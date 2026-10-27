@@ -5,7 +5,7 @@ var fs = require('fs'), path = require('path'), vm = require('vm');
 var sandbox = { window: {} };
 sandbox.window.window = sandbox.window;
 vm.createContext(sandbox);
-['config', 'evaluator', 'simulator', 'warehouse', 'ppe-sim'].forEach(function (f) {
+['config', 'evaluator', 'simulator', 'warehouse', 'ppe-sim', 'drone', 'drone-sim', 'crop', 'crop-sim', 'llm', 'llm-sim'].forEach(function (f) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'js', f + '.js'), 'utf8'), sandbox, { filename: f + '.js' });
 });
 var G = sandbox.window.GIGO;
@@ -107,6 +107,75 @@ r = gate(perfect().map(function (b) { return b.id === 'w3' ? loose(G.GROUND_TRUT
 ok(r.s.outcome === 'near_miss' && r.s.results.w3 === 'near_miss', 'loose box on worker C -> near miss (' + r.s.outcome + ')');
 r = gate(G.GROUND_TRUTH.map(loose));
 ok(r.s.outcome !== 'collision', 'warehouse all loose -> no incident (' + r.s.outcome + ')');
+G.useScenario('road');
+
+// ---- shared checks for the box scenes added later
+function play(sim, boxes, evaluate) {
+  var ev = (evaluate || G.evaluate)(boxes, G.GROUND_TRUTH), s = sim.create(G.buildDetections(ev)), n = 0;
+  while (!s.done && n++ < 60 * 120) sim.step(s, 1 / 60);
+  return { ev: ev, s: s };
+}
+function gtOf(id) { return G.GROUND_TRUTH.filter(function (g) { return g.id === id; })[0]; }
+function swap(id, fn) { return perfect().map(function (b) { return b.id === id ? fn(gtOf(id)) : b; }); }
+function noOverlap(name) {
+  var bad = 0;
+  G.GROUND_TRUTH.forEach(function (g) { G.GROUND_TRUTH.forEach(function (h) { if (g !== h && G.iou(g.box, h.box) >= 0.3) bad++; }); });
+  ok(!bad, name + ' GT boxes do not overlap');
+}
+
+// ---- drone census
+G.useScenario('drone');
+ok(G.GROUND_TRUTH.length === 12, 'drone has 12 objects');
+noOverlap('drone');
+r = play(G.DroneSim, perfect());
+ok(r.ev.score === 100 && r.s.done && r.s.outcome === 'safe', 'drone perfect -> accurate census (' + r.s.outcome + ', t=' + r.s.t.toFixed(1) + 's)');
+ok(G.DRONE_SPECIES.every(function (sp) { return r.s.tally[sp] === r.s.truth[sp]; }), 'drone perfect -> every species count matches');
+r = play(G.DroneSim, []);
+ok(r.s.outcome === 'collision' && r.s.stats.alertsMissed === 2, 'drone nothing labelled -> alerts missed');
+r = play(G.DroneSim, swap('poacher', loose));
+ok(r.s.outcome === 'near_miss' && r.s.results.poacher === 'late_alert', 'drone loose poacher box -> late alert (' + r.s.outcome + ')');
+r = play(G.DroneSim, swap('lion', function (g) { return boxFor(g, { cls: 'Zebra' }); }));
+ok(r.s.outcome === 'collision' && r.s.results.lion === 'alert_missed', 'drone lion labelled zebra -> predator alert missed');
+r = play(G.DroneSim, swap('z1', function (g) { return boxFor(g, { cls: 'Wildebeest' }); }));
+ok(r.s.outcome === 'warnings' && r.s.tally.Zebra === 2 && r.s.tally.Wildebeest === 4, 'drone zebra as wildebeest -> mix-up, counts off');
+r = play(G.DroneSim, perfect().filter(function (b) { return b.id !== 'e2'; }));
+ok(r.s.outcome === 'warnings' && r.s.results.e2 === 'missed_warning', 'drone missing elephant -> census short');
+
+// ---- maize disease
+G.useScenario('crop');
+ok(G.GROUND_TRUTH.length === 10, 'crop has 10 leaves');
+noOverlap('crop');
+r = play(G.CropSim, perfect());
+ok(r.ev.score === 100 && r.s.outcome === 'safe' && r.s.yieldPct === 100, 'crop perfect -> healthy harvest (' + r.s.outcome + ', ' + r.s.yieldPct + '%)');
+r = play(G.CropSim, []);
+ok(r.s.outcome === 'collision' && r.s.stats.outbreaks === 4, 'crop nothing labelled -> outbreak (' + r.s.yieldPct + '% saved)');
+r = play(G.CropSim, perfect().filter(function (b) { return b.id !== 'l2'; }));
+ok(r.s.outcome === 'collision' && r.s.results.l2 === 'outbreak' && r.s.stats.lost > 1, 'crop armyworm missed -> spreads (' + r.s.stats.lost + ' lost)');
+r = play(G.CropSim, swap('l6', loose));
+ok(r.s.outcome === 'near_miss' && r.s.results.l6 === 'late_treat' && r.s.stats.lost === 1, 'crop loose necrosis box -> late treatment, one plant lost');
+r = play(G.CropSim, swap('l1', function (g) { return boxFor(g, { cls: 'Grey Leaf Spot' }); }));
+ok(r.s.outcome === 'warnings' && r.s.stats.wasted === 1 && r.s.stats.lost === 0, 'crop healthy leaf as disease -> wasted spray');
+r = play(G.CropSim, swap('l3', function (g) { return boxFor(g, { cls: 'Maize Streak' }); }));
+ok(r.s.outcome === 'warnings' && r.s.results.l3 === 'wrong_tx' && r.s.stats.lost === 1, 'crop leaf spot as streak -> wrong treatment, plant lost');
+r = play(G.CropSim, G.GROUND_TRUTH.map(loose));
+ok(r.s.outcome !== 'collision', 'crop all loose -> no outbreak (' + r.s.outcome + ')');
+
+// ---- LLM answers
+G.useScenario('llm');
+function labels(over) {
+  return G.GROUND_TRUTH.map(function (g) { return { id: g.id, cls: over && over[g.id] !== undefined ? over[g.id] : g.cls }; }).filter(function (l) { return l.cls; });
+}
+var E = G.evaluateLabels;
+r = play(G.LLMSim, labels(), E);
+ok(r.ev.score === 100 && r.s.outcome === 'safe' && r.s.stats.correct === 10, 'llm all right -> reliable chatbot');
+r = play(G.LLMSim, [], E);
+ok(r.ev.score === 0 && r.s.outcome === 'collision' && r.s.stats.unsafe === 2 && r.s.stats.unsure === 8, 'llm nothing labelled -> unsafe advice + not sure');
+r = play(G.LLMSim, labels({ q5: 'Correct' }), E);
+ok(r.s.outcome === 'collision' && r.s.results.q5 === 'unsafe' && r.ev.score === 90, 'llm harmful answer approved -> unsafe advice');
+r = play(G.LLMSim, labels({ q2: 'Correct', q3: 'Wrong' }), E);
+ok(r.s.outcome === 'near_miss' && r.s.stats.hallucinations === 2, 'llm two mislabels -> hallucinations');
+r = play(G.LLMSim, labels({ q1: null }), E);
+ok(r.s.outcome === 'warnings' && r.s.results.q1 === 'unsure' && r.ev.counts.missing === 1, 'llm one unlabelled -> not sure');
 G.useScenario('road');
 
 console.log(failed ? '\n' + failed + ' FAILED' : '\nall passed');

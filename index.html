@@ -3,176 +3,113 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/favicon.png">
 <title>GIGO – Train the AI, See Results in Realtime</title>
+<meta name="description" content="Label data, then watch an AI act on it. A hands-on simulator for AI data annotation.">
 <link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/site.css">
 </head>
-<body>
-<header class="topbar">
-  <div class="brand">
-    <h1>GIGO <span id="tagline">Train the AI, Drive the Car</span></h1>
-    <p>DGL AI Simulator</p>
-  </div>
-  <ol id="stepper" class="stepper" aria-label="Learning cycle">
-    <li>Annotate</li><li>Evaluate</li><li>Simulate</li><li>Observe</li><li>Correct</li><li>Improve</li>
-  </ol>
-  <button id="btn-startover" class="ghost" type="button">Start over</button>
-</header>
+<body class="site">
+<script src="js/nav.js"></script>
 
-<section class="intro" aria-label="What this is">
-  <div class="scene-pick">
-    <span class="scene-pick-label">Scene</span>
-    <div class="seg" role="group" aria-label="Choose a scene">
-      <button id="btn-scene-road" type="button" aria-pressed="true">Road</button>
-      <button id="btn-scene-warehouse" type="button" aria-pressed="false">Warehouse PPE</button>
-    </div>
-  </div>
-  <div class="flow">
-    <div class="node bad">Garbage in<small>sloppy or missing labels</small></div>
-    <div class="arrow">&rarr;</div>
-    <div class="node">AI learns<small>from your annotations</small></div>
-    <div class="arrow">&rarr;</div>
-    <div class="node bad">Garbage out<small id="garbage-out">missed objects, unsafe driving</small></div>
-  </div>
-  <p id="intro-text"></p>
-</section>
-
-<main class="panels">
-  <section class="panel" id="panel-annotate" aria-labelledby="h-annot">
-    <div class="panel-head">
-      <h2 id="h-annot"><span class="num">1</span> Annotation workspace</h2>
-      <div class="progress" aria-live="polite">
-        <div class="progress-top"><span>Objects annotated</span><b id="progress-count">0 / 10</b></div>
-        <div class="bar"><div id="progress-fill"></div></div>
-        <small id="progress-boxes">0 boxes drawn</small>
+<main>
+  <section class="hero">
+    <div class="hero-in">
+      <div class="hero-copy">
+        <h1>Garbage in.<br><span>Garbage out.</span></h1>
+        <p class="lead">Label real-world scenes, then watch an AI act on your labels. Every missed or sloppy label shows up in what it does.</p>
+        <div class="hero-ctas">
+          <a class="btn primary" href="projects.html">Explore projects</a>
+          <a class="btn ghost-light" href="#how">How it works</a>
+        </div>
+        <ul class="hero-facts">
+          <li><b>5</b> scenes</li>
+          <li><b>2</b> label types</li>
+        </ul>
       </div>
-    </div>
-    <div id="class-bar" class="class-bar" role="group" aria-label="Object class"></div>
-    <div class="stage"><canvas id="annot-canvas" width="800" height="500" aria-label="Road scene to annotate"></canvas></div>
-    <p id="hint" class="hint"></p>
-    <details class="fit-help">
-      <summary>How is my box scored?</summary>
-      <p>The <b>fit</b> score says how well your box sits on the object. 100% is exact; 0% means not touching. Too big, too small or shifted lowers it.</p>
-      <ul>
-        <li><b>Under 30%</b>: the AI does not see the object.</li>
-        <li><b>30% to 75%</b>: the AI sees it, but late or unsure, and you score less.</li>
-        <li><b>75% or more</b>: the AI sees it reliably.</li>
-        <li><b>80% or more</b>: full points for that box.</li>
-      </ul>
-    </details>
-    <div class="toolbar">
-      <button id="btn-delete" type="button" class="ghost" disabled>Delete box</button>
-      <button id="btn-clear" type="button" class="ghost">Clear all</button>
-      <button id="btn-labels" type="button" class="ghost" aria-pressed="false" title="Hide the class names on your boxes">Hide labels</button>
-      <button id="btn-key" type="button" class="ghost" aria-pressed="false" title="Available after your first run">Show answer key</button>
-      <span class="spacer"></span>
-      <button id="btn-run" type="button" class="primary">&#9654; Run Simulation</button>
+      <figure class="hero-visual" aria-roledescription="carousel" aria-label="Scenes">
+        <div class="hs-stage"></div>
+        <a class="hs-label" href="play.html"></a>
+        <figcaption class="float f1"><i class="dot ok"></i>Good label: AI gets it</figcaption>
+        <figcaption class="float f2"><i class="dot warn"></i>Sloppy label: AI hesitates</figcaption>
+        <figcaption class="float f3"><i class="dot bad"></i>No label: AI is blind</figcaption>
+        <div class="hs-dots"></div>
+      </figure>
     </div>
   </section>
 
-  <section class="panel" id="panel-sim" aria-labelledby="h-sim">
-    <div class="panel-head">
-      <h2 id="h-sim"><span class="num">2</span> <span id="sim-title">Autonomous driving simulator</span></h2>
-      <span class="badge" title="The outcome comes from simple rules, not a real AI model">Simulated, not real AI</span>
-    </div>
-    <div class="stage sim-stage">
-      <canvas id="sim-canvas" width="800" height="330" aria-label="Top-down driving simulation"></canvas>
-      <div id="sim-overlay" class="overlay">
-        <div id="sim-idle"></div>
+  <section class="sect" id="how">
+    <div class="band-in">
+      <h2 class="sec-title">How it works</h2>
+      <div class="hero-cards">
+        <article class="hcard">
+          <span class="hc-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 9h5v5H8z"/></svg></span>
+          <span class="hc-step">01</span>
+          <h3>Label</h3>
+          <p>Draw boxes or mark answers. Rush it or take care: your call.</p>
+        </article>
+        <article class="hcard">
+          <span class="hc-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4l14 8-14 8z"/></svg></span>
+          <span class="hc-step">02</span>
+          <h3>Simulate</h3>
+          <p>A simulated AI drives, counts, diagnoses or answers using only your labels.</p>
+        </article>
+        <article class="hcard">
+          <span class="hc-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 16l5-5 4 4 7-7"/><path d="M15 8h5v5"/></svg></span>
+          <span class="hc-step">03</span>
+          <h3>Improve</h3>
+          <p>See what went wrong and why. Fix it, run again, compare.</p>
+        </article>
       </div>
     </div>
-    <ul class="legend">
-      <li><i style="--c:#22c55e"></i>Detected</li>
-      <li><i style="--c:#f59e0b"></i>Weak (loose box)</li>
-      <li><i style="--c:#ef4444" class="dash"></i>Not detected</li>
-      <li><i style="--c:#f97316" class="dash"></i>Misread class</li>
-    </ul>
-    <div class="toolbar">
-      <div id="view-seg" class="seg" role="group" aria-label="Camera view">
-        <button id="btn-view-2d" type="button" aria-pressed="true" title="Top-down view">2D</button>
-        <button id="btn-view-3d" type="button" aria-pressed="false" title="Chase-camera view">3D</button>
+  </section>
+
+  <section class="sect alt">
+    <div class="band-in">
+      <h2 class="sec-title">Why labels matter</h2>
+      <div class="why-grid">
+        <article class="wcard"><h3>Models copy their data</h3><p>An AI only knows what its labels teach it. Mistakes are learned too.</p></article>
+        <article class="wcard"><h3>Small errors add up</h3><p>One missed person or one wrong answer can decide the outcome.</p></article>
+        <article class="wcard"><h3>Annotators shape AI</h3><p>Careful labelling is the first safety check every AI system gets.</p></article>
       </div>
-      <button id="btn-reset-sim" type="button" class="ghost">Reset simulation</button>
-      <button id="btn-speed" type="button" class="ghost" title="Playback speed">0.5&times;</button>
-      <button id="btn-pause" type="button" class="ghost" aria-pressed="false" hidden>&#10074;&#10074; Pause</button>
-      <button id="btn-skip" type="button" class="ghost" hidden>Skip to result</button>
-      <span class="spacer"></span>
-      <button id="btn-correct" type="button" class="ghost">&larr; Correct my annotations</button>
     </div>
-    <p class="note disclaimer-text"></p>
+  </section>
+
+  <section class="sect">
+    <div class="band-in">
+      <div class="sec-head">
+        <h2 class="sec-title">Scenes</h2>
+        <a class="more" href="projects.html">All projects &rarr;</a>
+      </div>
+      <div id="teaser" class="gallery"></div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="band-in">
+      <h2>Ready to label?</h2>
+      <p>Pick a scene. It takes about five minutes.</p>
+      <a class="btn primary" href="projects.html">Choose a scene</a>
+    </div>
   </section>
 </main>
 
-<section id="results" class="results" aria-label="Results and feedback">
-  <article class="card">
-    <h3>Annotation quality score</h3>
-    <p id="score-empty" class="empty">Run the simulation to see your score.</p>
-    <div id="score-body" hidden>
-      <div class="score-top"><div id="score-gauge" class="gauge"></div><div id="score-band" class="bandrow"></div></div>
-      <ul id="score-metrics" class="metrics"></ul>
-    </div>
-  </article>
-
-  <article class="card">
-    <h3>Detection performance</h3>
-    <p id="detect-empty" class="empty">Shows which objects the simulated AI could detect.</p>
-    <div id="detect-body" hidden>
-      <p id="detect-sum" class="sum"></p>
-      <ul id="detect-list" class="detect"></ul>
-      <small class="muted">Click a row to see where the object is.</small>
-    </div>
-  </article>
-
-  <article class="card">
-    <h3 id="drive-title">Driving result</h3>
-    <p id="drive-empty" class="empty">Shows what the vehicle did and why.</p>
-    <div id="drive-body" hidden>
-      <div id="drive-head" class="outcome"></div>
-      <div id="drive-chips" class="stats"></div>
-      <ul id="drive-log" class="log"></ul>
-    </div>
-  </article>
-
-  <article class="card wide">
-    <h3>What went wrong, and why</h3>
-    <p id="why-empty" class="empty">Missing or wrong annotations are linked to the simulated outcome here.</p>
-    <div id="why-body" hidden><ul id="why-list" class="why"></ul></div>
-  </article>
-
-  <article class="card">
-    <h3>How to improve</h3>
-    <p id="fix-empty" class="empty">Recommendations appear after a run.</p>
-    <div id="fix-body" hidden>
-      <ul id="fix-list" class="fix"></ul>
-      <button id="btn-correct2" type="button" class="primary small" onclick="document.getElementById('btn-correct').click()">Correct and run again</button>
-    </div>
-  </article>
-
-  <article class="card">
-    <h3>Before and after</h3>
-    <p id="compare-empty" class="empty">Run twice to compare your attempts.</p>
-    <div id="compare-body" hidden>
-      <p id="compare-note" class="muted"></p>
-      <table id="compare-table" class="compare"></table>
-    </div>
-  </article>
-</section>
-
-<footer class="foot">
-  <p id="core-message" class="core"></p>
-  <p class="disclaimer-text"></p>
-</footer>
+<footer class="site-foot"><p>GIGO, a DGL AI simulator. Educational, not a real AI model.</p></footer>
 
 <script src="js/config.js"></script>
 <script src="js/scene.js"></script>
 <script src="js/warehouse.js"></script>
-<script src="js/evaluator.js"></script>
-<script src="js/annotator.js"></script>
-<script src="js/simulator.js"></script>
-<script src="js/sim-3d.js"></script>
-<script src="js/sim-view.js"></script>
-<script src="js/ppe-sim.js"></script>
-<script src="js/ppe-view.js"></script>
-<script src="js/feedback.js"></script>
-<script src="js/app.js"></script>
+<script src="js/drone.js"></script>
+<script src="js/crop.js"></script>
+<script src="js/llm.js"></script>
+<script src="js/gallery.js"></script>
+<script src="js/hero.js"></script>
+<script>
+  (function (G) {
+    G.renderGallery(document.getElementById('teaser'), ['drone', 'crop', 'llm']);
+    G.initHero(document.querySelector('.hero-visual'));
+  })(window.GIGO);
+</script>
 </body>
 </html>

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/favicon.png">
+<title>Learn more – GIGO</title>
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/site.css">
+</head>
+<body class="site">
+<script src="js/nav.js"></script>
+
+<main>
+  <section class="page-head">
+    <div class="band-in">
+      <p class="eyebrow">Learn more</p>
+      <h1>The short version</h1>
+      <p class="lead">AI learns from labelled examples. GIGO shows what happens when those labels are wrong.</p>
+    </div>
+  </section>
+
+  <div class="sect tight"><div class="band-in learn">
+    <nav class="toc" aria-label="On this page">
+      <a href="#what">What is GIGO?</a><a href="#scoring">Scoring</a><a href="#scenes">Scenes</a><a href="#glossary">Glossary</a>
+    </nav>
+
+    <section id="what" class="lcard">
+      <h2>What is GIGO?</h2>
+      <p><b>Garbage in, garbage out.</b> A model is only as good as its training data. Missing, loose or wrong labels become missing, late or wrong decisions.</p>
+    </section>
+
+    <section id="scoring" class="lcard">
+      <h2>How scoring works</h2>
+      <h3>Boxes</h3>
+      <p><b>Fit</b> (IoU) says how well your box matches the object: 100% is exact.</p>
+      <div class="fit-scale" role="list">
+        <div role="listitem" class="bad"><b>&lt; 30%</b>Not seen</div>
+        <div role="listitem" class="warn"><b>30–75%</b>Seen late</div>
+        <div role="listitem" class="ok"><b>75%+</b>Seen reliably</div>
+        <div role="listitem" class="ok2"><b>80%+</b>Full points</div>
+      </div>
+      <p class="muted-p">Wrong class: counted, but misread. Duplicate box: &minus;3. Box on nothing: &minus;4.</p>
+      <h3>Text</h3>
+      <p>Each right label earns 10 points. Wrong or missing labels earn none.</p>
+      <h3>Bands</h3>
+      <p class="bands"><span style="--c:#16a34a">Excellent 90+</span><span style="--c:#65a30d">Good 70+</span><span style="--c:#d97706">Partial 40+</span><span style="--c:#dc2626">Poor</span></p>
+    </section>
+
+    <section id="scenes" class="lcard">
+      <h2>What each scene simulates</h2>
+      <table class="ltable">
+        <thead><tr><th>Scene</th><th>Missed label means</th></tr></thead>
+        <tbody>
+          <tr><td>Self-driving car</td><td>No braking: collision</td></tr>
+          <tr><td>Warehouse PPE</td><td>Unequipped worker enters the zone</td></tr>
+          <tr><td>Drone census</td><td>Wrong counts, poacher or lion not flagged</td></tr>
+          <tr><td>Maize scout</td><td>Disease spreads through the field</td></tr>
+          <tr><td>LLM answers</td><td>Hallucinations or unsafe advice</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="glossary" class="lcard">
+      <h2>Glossary</h2>
+      <dl class="gloss">
+        <dt>Annotation</dt><dd>A label on data: a box, a class or a judgement.</dd>
+        <dt>Ground truth</dt><dd>The correct answer key.</dd>
+        <dt>IoU (fit)</dt><dd>Overlap between your box and the true box.</dd>
+        <dt>Class</dt><dd>What the object is: car, zebra, healthy leaf.</dd>
+        <dt>False alarm</dt><dd>The AI flags something that is not there.</dd>
+        <dt>Hallucination</dt><dd>A confident answer that is wrong.</dd>
+      </dl>
+    </section>
+
+    <section class="lcard note-card">
+      <p>These are teaching simulations. Outcomes come from simple rules, not real AI models or measured safety results.</p>
+    </section>
+  </div></div>
+</main>
+
+<footer class="site-foot"><p>GIGO, a DGL AI simulator.</p></footer>
+</body>
+</html>

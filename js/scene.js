@@ -15,6 +15,8 @@ window.GIGO = window.GIGO || {};
     ctx.closePath();
   }
   G.roundRect = rr;
+  G.rng = function (seed) { return rng(seed); };
+  G.shade = function (hex, amt) { return shade(hex, amt); };
 
   // deterministic noise so the scene is identical on every load
   function rng(seed) { return function () { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }; }

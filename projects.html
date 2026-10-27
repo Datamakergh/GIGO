@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/favicon.png">
+<title>Projects – GIGO</title>
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/site.css">
+</head>
+<body class="site">
+<script src="js/nav.js"></script>
+
+<main>
+  <section class="page-head">
+    <div class="band-in">
+      <p class="eyebrow">Projects</p>
+      <h1>Five scenes, one lesson</h1>
+      <p class="lead">Each scene is a real job AI is trained for. Label it, run it, and see what your data teaches.</p>
+      <ul class="kinds">
+        <li><b>Box labelling</b> Draw boxes around objects and pick a class.</li>
+        <li><b>Text labelling</b> Judge answers as correct or wrong.</li>
+      </ul>
+    </div>
+  </section>
+  <section class="sect tight">
+    <div class="band-in"><div id="gallery" class="gallery"></div></div>
+  </section>
+</main>
+
+<footer class="site-foot"><p>Educational simulations driven by simple rules, not real AI models.</p></footer>
+
+<script src="js/config.js"></script>
+<script src="js/scene.js"></script>
+<script src="js/warehouse.js"></script>
+<script src="js/drone.js"></script>
+<script src="js/crop.js"></script>
+<script src="js/llm.js"></script>
+<script src="js/gallery.js"></script>
+<script>GIGO.renderGallery(document.getElementById('gallery'));</script>
+</body>
+</html>

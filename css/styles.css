@@ -30,17 +30,8 @@ h1, h2, h3, p { margin: 0; }
 .primary.small { padding: 8px 14px; font-size: 14px; margin-top: 10px; }
 :focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
 
-/* intro */
-.intro { max-width: 1500px; margin: 16px auto 0; padding: 0 20px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
-.flow { display: flex; align-items: center; gap: 8px; }
-.node { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 8px 14px; font-weight: 700; box-shadow: var(--shadow); }
-.node small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
-.node.bad { border-color: #fecaca; background: #fff7f7; }
-.arrow { color: var(--muted); font-size: 22px; }
-.intro p { flex: 1 1 320px; color: #334155; }
-
 /* panels */
-.panels { max-width: 1500px; margin: 16px auto; padding: 0 20px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 18px; }
+.panels { max-width: 1500px; margin: 16px auto; padding: 0 20px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
 .panel { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
 .panel-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
 .panel h2 { font-size: 18px; display: flex; align-items: center; gap: 8px; }
@@ -166,17 +157,8 @@ button:active:not(:disabled) { transform: translateY(1px) scale(.98); }
 .zoom-ctl button:hover:not(:disabled) { background: #e2e8f0; }
 .zoom-ctl button:disabled { opacity: .4; cursor: default; }
 
-/* sim panel: centre the view (and its legend) between the header and the controls */
-#panel-sim .sim-stage { margin-top: auto; }
-#panel-sim > .toolbar { margin-top: auto; }
-
-/* scene picker */
-.scene-pick { display: flex; align-items: center; gap: 8px; }
-.scene-pick-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
-.scene-pick .seg { background: var(--card); box-shadow: var(--shadow); }
-.seg[hidden] { display: none; }
-
-.fit-help { font-size: 13px; color: var(--muted); margin: 4px 0 10px; }
-.fit-help summary { cursor: pointer; font-weight: 600; }
-.fit-help p, .fit-help ul { margin: 6px 0 0; }
-.fit-help ul { padding-left: 18px; }
+/* both panels: the view fills the space between header and controls, so the two stages line up
+   (the sim canvas is a wide strip, so it sits centred on a dark backdrop) */
+.panel > .toolbar { margin-top: auto; }
+#panel-sim .sim-stage { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; background: #0f172a; min-height: 0; }
+#panel-sim .sim-stage .chat { flex: 1 1 auto; height: auto; min-height: 420px; }

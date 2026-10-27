@@ -3,8 +3,9 @@
   'use strict';
   function $(id) { return document.getElementById(id); }
 
-  var annot = new G.Annotator($('annot-canvas'));
-  var views = { SimView: new G.SimView($('sim-canvas')), PPEView: new G.PPEView($('sim-canvas')) };
+  var boxAnnot = new G.Annotator($('annot-canvas')), textAnnot = new G.TextLabeler($('label-list')), annot = boxAnnot;
+  var cv = $('sim-canvas');
+  var views = { SimView: new G.SimView(cv), PPEView: new G.PPEView(cv), DroneView: new G.DroneView(cv), CropView: new G.CropView(cv), LLMView: new G.LLMView($('chat')) };
   var view = views.SimView, S = G.Sim, mode3d = '2d';
   var STEP = 1 / 60, MAX_SKIP = 60 * 160;
   var phase = 'annotate';          // annotate | running | done
@@ -37,23 +38,27 @@
     var sel = annot.getSelected(), cur = sel ? sel.cls : annot.getClass();
     Array.prototype.forEach.call(bar.children, function (b) { b.classList.toggle('on', b.dataset.cls === cur); });
     $('btn-delete').disabled = !sel || phase === 'running';
-    $('hint').textContent = sel ? 'Selected: drag to move, drag handles to resize, press Delete to remove. Pick a class to relabel.'
-      : 'Choose a class, then drag on the scene to draw a box around an object.';
+    $('hint').textContent = G.SCENARIO.kind === 'text' ? 'Tap a button to label; tap again to clear.'
+      : sel ? 'Drag to move, handles to resize, Delete to remove.' : 'Pick a class, then drag a box around an object.';
   }
 
   /* ---- live progress (objects that have a box on them) */
+  function evaluate() { return (G.SCENARIO.evaluate || G.evaluate)(annot.getBoxes(), G.GROUND_TRUTH); }
   function updateProgress() {
-    var e = G.evaluate(annot.getBoxes(), G.GROUND_TRUTH);
+    var e = evaluate();
     $('progress-count').textContent = e.located + ' / ' + e.total;
     $('progress-fill').style.transform = 'scaleX(' + (e.located / e.total) + ')';
-    $('progress-boxes').textContent = e.boxCount + (e.boxCount === 1 ? ' box drawn' : ' boxes drawn');
+    $('progress-boxes').textContent = G.SCENARIO.kind === 'text' ? '' : e.boxCount + (e.boxCount === 1 ? ' box drawn' : ' boxes drawn');
   }
-  annot.on('change', function () {
-    updateProgress();
-    if (phase === 'done') { setStep(4); }
-    else if (phase === 'annotate') setStep(0);
+  [boxAnnot, textAnnot].forEach(function (a) {
+    a.on('change', function () {
+      if (a !== annot) return;
+      updateProgress();
+      if (phase === 'done') { setStep(4); }
+      else if (phase === 'annotate') setStep(0);
+    });
+    a.on('select', function () { if (a === annot) syncClassBar(); });
   });
-  annot.on('select', syncClassBar);
 
   /* ---- simulation loop */
   function showIdle(show) { $('sim-overlay').hidden = !show; }
@@ -90,7 +95,7 @@
 
   function run() {
     if (phase === 'running') return;
-    ev = G.evaluate(annot.getBoxes(), G.GROUND_TRUTH);
+    ev = evaluate();
     det = G.buildDetections(ev);
     sim = S.create(det);
     G.Feedback.showScore(ev, { onLocate: locate });
@@ -190,44 +195,43 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
-  /* ---- scene switcher: swaps classes, ground truth, simulation and page text */
+  /* ---- scene setup: play.html?scene=<id> picks the scenario (classes, ground truth, sim, view, page text) */
   function applyScenario(id) {
-    var sc = G.useScenario(id);
-    Object.keys(G.SCENARIOS).forEach(function (k) { $('btn-scene-' + k).setAttribute('aria-pressed', k === id ? 'true' : 'false'); });
+    var sc = G.useScenario(id), text = sc.kind === 'text';
     S = G[sc.sim];
-    if (views.PPEView.setActive) views.PPEView.setActive(sc.view === 'PPEView');
+    Object.keys(views).forEach(function (k) { if (views[k].setActive) views[k].setActive(k === sc.view); });
     view = views[sc.view];
     if (sc.has3d) view.setMode(mode3d);
+    annot = text ? textAnnot : boxAnnot;
     $('view-seg').hidden = !sc.has3d;
-    $('tagline').textContent = sc.tagline;
-    document.title = 'GIGO – ' + sc.tagline;
-    $('garbage-out').textContent = sc.garbageOut;
-    $('intro-text').innerHTML = sc.intro;
+    speed = text ? 1 : 0.5; $('btn-speed').textContent = speed + '×';
+    ['annot-stage', 'class-bar', 'btn-delete', 'btn-labels', 'sim-canvas', 'legend'].forEach(function (n) { $(n).hidden = text; });
+    $('label-list').hidden = !text; $('chat').hidden = !text;
+    $('progress-label').textContent = text ? 'Answers labelled' : 'Objects labelled';
+    $('scene-title').textContent = sc.card.title;
+    $('task').textContent = sc.task;
+    document.title = sc.card.title + ' – GIGO';
     $('sim-title').textContent = sc.simTitle;
     $('sim-idle').innerHTML = sc.idle;
     $('drive-title').textContent = sc.resultTitle;
     $('drive-empty').textContent = sc.resultEmpty;
-    $('annot-canvas').setAttribute('aria-label', sc.annotLabel);
-    $('sim-canvas').setAttribute('aria-label', sc.has3d && mode3d === '3d' ? 'Chase-camera driving simulation' : sc.simLabel);
+    if (!text) {
+      $('annot-canvas').setAttribute('aria-label', sc.annotLabel);
+      $('sim-canvas').setAttribute('aria-label', sc.has3d && mode3d === '3d' ? 'Chase-camera driving simulation' : sc.simLabel);
+    }
     document.querySelectorAll('.disclaimer-text').forEach(function (n) { n.textContent = G.MESSAGES.disclaimer; });
     buildClassBar();
     annot.reset();
     startOver();
     syncClassBar();
   }
-  Object.keys(G.SCENARIOS).forEach(function (k) {
-    $('btn-scene-' + k).addEventListener('click', function () {
-      if (G.SCENARIO.id === k || phase === 'running' && !confirm('Stop this run and switch scene?')) return;
-      if (phase !== 'running' && (annot.getBoxes().length || history.length) && !confirm('Switch scene? This removes your boxes and the run history.')) return;
-      applyScenario(k);
-    });
-  });
   $('btn-key').disabled = true;
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' && e.ctrlKey && phase !== 'running') run();
   });
 
   $('core-message').textContent = G.MESSAGES.core;
-  applyScenario('road');
+  var want = (/[?&]scene=([a-z0-9]+)/.exec(location.search) || [])[1];
+  applyScenario(G.SCENARIOS[want] ? want : 'road');
   window.GIGO_APP = { annot: annot, run: run, applyScenario: applyScenario, getSim: function () { return sim; } };
 })(window.GIGO);
