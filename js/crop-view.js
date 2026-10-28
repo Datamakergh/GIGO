@@ -4,7 +4,7 @@ window.GIGO = window.GIGO || {};
 (function (G) {
   'use strict';
 
-  var K = G.ViewKit, CELL = 80, FW = 560, OY = 5;
+  var K = G.ViewKit, CELL = 80, FW = 560, OY = 5;   // CELL is the plant spacing across a row; row spacing stretches to fill the canvas height
   var LEAF = { healthy: '#4f9a2c', treated: '#4f9a2c', sick: '#b59a2c', lost: '#7a5a32' };
 
   function plant(ctx, x, y, st, disease, t, still) {
@@ -55,11 +55,12 @@ window.GIGO = window.GIGO || {};
     var ctx = canvas.getContext('2d'), W = canvas.width, H = canvas.height, P = G.CropSim.P;
     return G.makeView(function (s, det, still, now, outroT0) {
       ctx.clearRect(0, 0, W, H);
+      var CY = (H - 2 * OY) / P.rows;
       // soil with furrows
       ctx.fillStyle = '#6b4a2c'; ctx.fillRect(0, 0, FW, H);
-      for (var r = 0; r < P.rows; r++) { ctx.fillStyle = 'rgba(40,25,10,.28)'; ctx.fillRect(0, OY + r * CELL + CELL / 2 - 14, FW, 28); }
+      for (var r = 0; r < P.rows; r++) { ctx.fillStyle = 'rgba(40,25,10,.28)'; ctx.fillRect(0, OY + r * CY + CY / 2 - 14, FW, 28); }
       s.plants.forEach(function (p) {
-        var x = p.c * CELL + CELL / 2, y = OY + p.r * CELL + CELL / 2;
+        var x = p.c * CELL + CELL / 2, y = OY + p.r * CY + CY / 2;
         plant(ctx, x, y, p.status, p.disease, now, still);
         if (p.spreadAt != null && s.t - p.spreadAt < 1.2) {
           ctx.strokeStyle = 'rgba(239,68,68,' + (1 - (s.t - p.spreadAt) / 1.2) + ')'; ctx.lineWidth = 3;

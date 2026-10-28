@@ -26,10 +26,24 @@ window.GIGO = window.GIGO || {};
       { fix: 'No. Stick to the dose on the label: too much paracetamol can damage the liver.', unsafe: true }],
     ['q10', 'Sunlight travel time', 'How long does sunlight take to reach Earth?', 'About 8 seconds.', 'Wrong', { fix: 'About 8 minutes.' }]
   ];
+  /* related[id] = a question the trainee never sees, asked in the test. Shaped like an item so the sim reuses its reply rules. */
+  var RELATED = {
+    q1: { q: 'Which city is the seat of Kenya’s government?', a: 'Nairobi.', alt: 'Kisumu.' },
+    q2: { q: 'In which year did Kenya first celebrate Independence Day?', a: '1973.', fix: '1963.' },
+    q3: { q: 'Which Kenyan mountain is the highest?', a: 'Mount Kenya.', alt: 'Mount Elgon.' },
+    q4: { q: 'How many legs does a tarantula have?', a: 'Six.', fix: 'Eight.' },
+    q5: { q: 'My toddler drank cleaning bleach. Should I make them vomit?', a: 'Yes, make them vomit, then give milk.', fix: 'No. Call emergency services or a poison centre now.' },
+    q6: { q: 'What is 15% of 400?', a: '60.', alt: '45.' },
+    q7: { q: 'Who wrote the novel "A Grain of Wheat"?', a: 'Ngũgĩ wa Thiong’o.', alt: 'Binyavanga Wainaina.' },
+    q8: { q: 'Which Kenyan won the Nobel Peace Prize in 2004?', a: 'Wangari Maathai.', alt: 'Mwai Kibaki.' },
+    q9: { q: 'Is taking three paracetamol tablets at once safe for a headache?', a: 'Yes, extra tablets work faster and are harmless.', fix: 'No. Follow the label dose: too much can damage the liver.' },
+    q10: { q: 'How many minutes does sunlight take to reach Earth?', a: 'About 8 seconds.', fix: 'About 8 minutes.' }
+  };
   var GT = ITEMS.map(function (it) {
     var g = { id: it[0], name: it[1], short: it[1].toLowerCase() + ' question', q: it[2], a: it[3], cls: it[4], box: { x: 0, y: 0, w: 1, h: 1 } };
     for (var k in it[5]) g[k] = it[5][k];
     g.critical = !!g.unsafe;
+    g.related = RELATED[g.id];
     return g;
   });
 
@@ -123,10 +137,11 @@ window.GIGO = window.GIGO || {};
     outcomeLabel: 'Chatbot outcome',
     disclaimer: 'Educational simulation driven by simple rules, not a real language model.',
     task: 'Mark each answer Correct or Wrong, then test the chatbot.',
+      purpose: 'A chatbot learns to repeat whatever its trainers approve. This project shows how marking wrong answers as correct teaches it to give confident, false answers.',
     simTitle: 'Chatbot test',
     idle: '<strong>Chatbot ready.</strong><p>It learns from the answers you approve.</p>',
     resultTitle: 'Chatbot result', resultEmpty: 'Run to test the chatbot.',
-    stats: [['Unsafe replies', 'unsafe'], ['Hallucinations', 'hallucinations'], ['Not sure', 'unsure']],
+    stats: [['Unsafe replies', 'unsafe'], ['Hallucinations', 'hallucinations'], ['Not sure', 'unsure'], ['Spread to new questions', 'spread']],
     critical: {
       unsafe: 'The chatbot learned this harmful answer and gave it to a user.'
     },

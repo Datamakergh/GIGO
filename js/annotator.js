@@ -205,13 +205,32 @@ window.GIGO = window.GIGO || {};
       (function tick() { render(); if (flash && performance.now() - flash.t0 < 2400) requestAnimationFrame(tick); else { flash = null; render(); } })();
     };
 
-    function label(text, x, y, color) {
+    function label(text, x, y, color, ty) {
       var k = 1 / z;
       ctx.font = '600 ' + 15 * k + 'px system-ui, sans-serif';
       var w = ctx.measureText(text).width + 12 * k, h = 21 * k;
-      var ty = y - h < 0 ? y + 2 * k : y - h;
+      if (ty == null) ty = y - h < 0 ? y + 2 * k : y - h;
       ctx.fillStyle = color; G.roundRect(ctx, x - k, ty, w, h, 4 * k); ctx.fill();
       ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(text, x + 5 * k, ty + h / 2 + k);
+    }
+
+    // answer-key tags sit under each box (clear of the user's own labels on top); big boxes go first and
+    // smaller ones (PPE inside a person) step down or up until they don't cover a tag already placed
+    function keyLabels() {
+      var k = 1 / z, h = 21 * k, placed = [];
+      ctx.font = '600 ' + 15 * k + 'px system-ui, sans-serif';
+      G.GROUND_TRUTH.slice().sort(function (a, b) { return b.box.w * b.box.h - a.box.w * a.box.h; }).forEach(function (g) {
+        var b = g.box, w = ctx.measureText(g.cls).width + 12 * k, x = clamp(b.x, k, W - w - k), ty = null;
+        var tries = [b.y + b.h + 2 * k, b.y + b.h - h - 2 * k, b.y - h - 2 * k, b.y + 2 * k];
+        for (var i = 0; i < 6; i++) tries.push(b.y + b.h + 2 * k + (i + 1) * (h + 2 * k));
+        for (i = 0; i < tries.length && ty == null; i++) {
+          var t = clamp(tries[i], 0, H - h);
+          if (!placed.some(function (r) { return x < r.x + r.w && r.x < x + w && t < r.y + r.h && r.y < t + h; })) ty = t;
+        }
+        if (ty == null) ty = clamp(tries[0], 0, H - h);
+        placed.push({ x: x, y: ty, w: w, h: h });
+        label(g.cls, x, 0, G.classColor(g.cls), ty);
+      });
     }
 
     function render() {
@@ -223,9 +242,10 @@ window.GIGO = window.GIGO || {};
         ctx.save(); ctx.setLineDash([7, 5]); ctx.lineWidth = 2.5;
         G.GROUND_TRUTH.forEach(function (g) {
           ctx.strokeStyle = '#ffffff'; ctx.strokeRect(g.box.x, g.box.y, g.box.w, g.box.h);
-          ctx.strokeStyle = '#111827'; ctx.lineDashOffset = 6; ctx.strokeRect(g.box.x, g.box.y, g.box.w, g.box.h); ctx.lineDashOffset = 0;
+          ctx.strokeStyle = G.classColor(g.cls); ctx.lineDashOffset = 6; ctx.strokeRect(g.box.x, g.box.y, g.box.w, g.box.h); ctx.lineDashOffset = 0;
         });
         ctx.restore();
+        keyLabels();
       }
       if (flash) {
         var g = G.GROUND_TRUTH.filter(function (q) { return q.id === flash.id; })[0];

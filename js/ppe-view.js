@@ -7,7 +7,7 @@ window.GIGO = window.GIGO || {};
 
   var reduceMotion = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
   var COL = { good: '#22c55e', late: '#f59e0b', missed: '#ef4444' };
-  var FLOOR = 300, WH = 118;   // feet line and worker height on screen
+  var FLOOR = 300, WH = 118, WORLD_H = 330;   // feet line and worker height on screen
   function clamp01(v) { return Math.max(0, Math.min(1, v)); }
   function easeOut(p) { p = clamp01(p); return 1 - Math.pow(1 - p, 3); }
 
@@ -36,11 +36,11 @@ window.GIGO = window.GIGO || {};
   }
 
   function backdrop(ctx, W, H, s, still, now) {
-    var P = G.PPESim.P, i;
-    // wall
-    ctx.fillStyle = '#c3ccd5'; ctx.fillRect(0, 0, W, 205);
+    var P = G.PPESim.P, i, off = H - WORLD_H;   // H here is the world height plus the extra band under the floor
+    // wall (extended up into the extra band)
+    ctx.fillStyle = '#c3ccd5'; ctx.fillRect(0, -off, W, 205 + off);
     ctx.strokeStyle = 'rgba(60,75,95,.12)'; ctx.lineWidth = 1;
-    for (i = 0; i < W; i += 22) { ctx.beginPath(); ctx.moveTo(i + 0.5, 0); ctx.lineTo(i + 0.5, 205); ctx.stroke(); }
+    for (i = 0; i < W; i += 22) { ctx.beginPath(); ctx.moveTo(i + 0.5, -off); ctx.lineTo(i + 0.5, 205); ctx.stroke(); }
     // racking in the zone
     for (var rx = P.zoneX + 40; rx < W; rx += 130) {
       ctx.fillStyle = '#d9822b'; ctx.fillRect(rx, 60, 4, 145); ctx.fillRect(rx + 110, 60, 4, 145);
@@ -145,7 +145,9 @@ window.GIGO = window.GIGO || {};
     function render(s, det) {
       var still = reduceMotion.matches, now = performance.now(), P = G.PPESim.P;
       ctx.clearRect(0, 0, W, H);
-      backdrop(ctx, W, H, s, still, now);
+      var off = (H - WORLD_H) / 2;   // the 330-tall world sits centred; wall and floor extend to fill the rest
+      ctx.save(); ctx.translate(0, off);
+      backdrop(ctx, W, WORLD_H + off, s, still, now);
       camera(ctx, s, still, now);
       signal(ctx, s, still, now);
 
@@ -181,8 +183,9 @@ window.GIGO = window.GIGO || {};
       if (s.alarmAt != null) {
         var age = s.t - s.alarmAt, pulse = still ? 0.5 : 0.5 + 0.5 * Math.sin(now / 140);
         ctx.fillStyle = 'rgba(220,38,38,' + (0.08 + 0.14 * pulse) * Math.max(0, 1 - age / 6) + ')';
-        ctx.fillRect(P.zoneX, 0, W - P.zoneX, H);
+        ctx.fillRect(P.zoneX, -off, W - P.zoneX, H);
       }
+      ctx.restore();
 
       // HUD: workers checked
       var done = s.workers.filter(function (w) { return w.decided || w.entered; }).length;

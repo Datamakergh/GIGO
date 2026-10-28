@@ -162,6 +162,7 @@ window.GIGO = window.GIGO || {};
     outcomeLabel: 'Harvest outcome',
     disclaimer: 'Educational simulation driven by simple rules, not a real AI model.',
     task: 'Box and diagnose all 10 leaves, then run the 21-day field test.',
+      purpose: 'Smallholder farmers rely on early disease detection to protect their harvest. This project shows how mislabelled leaves lead to wrong or missing treatment, and lost food.',
     annotLabel: 'Maize leaves to annotate',
     simTitle: 'Field timelapse',
     simLabel: 'Maize field disease simulation',

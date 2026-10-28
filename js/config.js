@@ -99,6 +99,7 @@ window.GIGO = window.GIGO || {};
         tags: ['Object detection', '2D + 3D sim'] },
       outcomeLabel: 'Driving outcome',
       task: 'Box all 10 objects, then run the drive.',
+      purpose: 'A self-driving car only brakes for what it has learned to see. This project shows how sloppy or missing labels on cars, pedestrians, cyclists and traffic lights become near misses and crashes on the road, so safer training data saves lives.',
       annotLabel: 'Road scene to annotate',
       simTitle: 'Driving simulator',
       simLabel: 'Top-down driving simulation',

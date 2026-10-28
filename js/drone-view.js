@@ -5,7 +5,7 @@ window.GIGO = window.GIGO || {};
   'use strict';
 
   var K = G.ViewKit, COL = { good: '#22c55e', late: '#f59e0b', wrong: '#f97316', missed: '#ef4444' };
-  var S = 330 / 500, MW = 800 * S;   // map scale and width on the 800 x 330 canvas
+  var S = 1, MW = 800;   // the map fills the 800 x 500 canvas; the census strip overlays its bottom edge
 
   function drone(ctx, x, y, t, still) {
     ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(x + 8, y + 10, 14, 10, 0, 0, Math.PI * 2); ctx.fill();
@@ -21,32 +21,32 @@ window.GIGO = window.GIGO || {};
     ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(x + 3, y, 1.8, 0, Math.PI * 2); ctx.fill();
   }
 
-  function panel(ctx, s, x, W, H) {
-    ctx.fillStyle = '#0f172a'; ctx.fillRect(x, 0, W - x, H);
-    ctx.fillStyle = '#94a3b8'; ctx.font = '800 11px system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-    ctx.fillText('LIVE CENSUS', x + 16, 26);
-    ctx.fillStyle = '#64748b'; ctx.font = '600 10px system-ui'; ctx.textAlign = 'right'; ctx.fillText('AI / TRUE', W - 16, 26);
-    var max = 4, y = 46;
-    G.DRONE_SPECIES.forEach(function (sp) {
-      var ai = s.tally[sp], tr = s.truth[sp], c = G.classColor(sp);
-      ctx.textAlign = 'left'; ctx.fillStyle = '#e2e8f0'; ctx.font = '600 13px system-ui'; ctx.fillText(sp, x + 16, y + 10);
-      ctx.textAlign = 'right'; ctx.font = '800 13px system-ui';
-      ctx.fillStyle = s.done ? (ai === tr ? '#4ade80' : '#fbbf24') : '#fff';
-      ctx.fillText(ai + ' / ' + tr, W - 16, y + 10);
-      var bw = W - x - 32;
-      ctx.fillStyle = '#1e293b'; G.roundRect(ctx, x + 16, y + 17, bw, 6, 3); ctx.fill();
-      ctx.fillStyle = 'rgba(148,163,184,.35)'; G.roundRect(ctx, x + 16, y + 17, bw * tr / max, 6, 3); ctx.fill();
-      if (ai) { ctx.fillStyle = c; G.roundRect(ctx, x + 16, y + 17, bw * Math.min(ai, max) / max, 6, 3); ctx.fill(); }
-      y += 38;
+  var BAR = 76;   // height of the census strip along the bottom of the map
+
+  function panel(ctx, s, W, H) {
+    var y0 = H - BAR, cw = 124, x, y;
+    ctx.fillStyle = 'rgba(15,23,42,.92)'; ctx.fillRect(0, y0, W, BAR);
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = '#94a3b8'; ctx.font = '800 10px system-ui'; ctx.textAlign = 'left'; ctx.fillText('LIVE CENSUS  (AI / TRUE)', 16, y0 + 18);
+    G.DRONE_SPECIES.forEach(function (sp, i) {
+      var ai = s.tally[sp], tr = s.truth[sp], c = G.classColor(sp), max = 4, bw = cw - 14;
+      x = 16 + i * cw; y = y0 + 32;
+      ctx.textAlign = 'left'; ctx.fillStyle = '#e2e8f0'; ctx.font = '600 12px system-ui'; ctx.fillText(sp, x, y + 8);
+      ctx.textAlign = 'right'; ctx.font = '800 12px system-ui';
+      ctx.fillStyle = s.done ? (ai === tr ? '#4ade80' : '#fbbf24') : '#fff'; ctx.fillText(ai + ' / ' + tr, x + bw, y + 8);
+      ctx.fillStyle = '#1e293b'; G.roundRect(ctx, x, y + 14, bw, 6, 3); ctx.fill();
+      ctx.fillStyle = 'rgba(148,163,184,.35)'; G.roundRect(ctx, x, y + 14, bw * tr / max, 6, 3); ctx.fill();
+      if (ai) { ctx.fillStyle = c; G.roundRect(ctx, x, y + 14, bw * Math.min(ai, max) / max, 6, 3); ctx.fill(); }
     });
-    ctx.fillStyle = '#94a3b8'; ctx.font = '800 11px system-ui'; ctx.textAlign = 'left'; ctx.fillText('ALERTS', x + 16, y + 12);
-    y += 22;
+    x = 16 + G.DRONE_SPECIES.length * cw + 8; y = y0 + 18;
+    ctx.fillStyle = '#94a3b8'; ctx.font = '800 10px system-ui'; ctx.textAlign = 'left'; ctx.fillText('ALERTS', x, y);
+    y += 8;
     G.GROUND_TRUTH.filter(function (g) { return g.critical; }).forEach(function (g) {
       var r = s.results[g.id], st = !r ? ['…', '#64748b', 'waiting'] : r === 'alert' ? ['✓', '#4ade80', 'sent'] : r === 'late_alert' ? ['!', '#fbbf24', 'late'] : ['✗', '#f87171', 'missed'];
-      ctx.fillStyle = st[1]; ctx.font = '800 13px system-ui'; ctx.textAlign = 'left'; ctx.fillText(st[0], x + 16, y + 10);
-      ctx.fillStyle = '#e2e8f0'; ctx.font = '600 12px system-ui'; ctx.fillText(g.cls === 'Lion' ? 'Predator' : 'Poacher', x + 34, y + 10);
-      ctx.fillStyle = st[1]; ctx.textAlign = 'right'; ctx.fillText(st[2], W - 16, y + 10);
-      y += 22;
+      ctx.fillStyle = st[1]; ctx.font = '800 12px system-ui'; ctx.textAlign = 'left'; ctx.fillText(st[0], x, y + 12);
+      ctx.fillStyle = '#e2e8f0'; ctx.font = '600 12px system-ui'; ctx.fillText(g.cls === 'Lion' ? 'Predator' : 'Poacher', x + 16, y + 12);
+      ctx.fillStyle = st[1]; ctx.textAlign = 'right'; ctx.fillText(st[2], W - 16, y + 12);
+      y += 18;
     });
   }
 
@@ -82,7 +82,7 @@ window.GIGO = window.GIGO || {};
         var ag = G.GROUND_TRUTH.filter(function (g) { return g.id === s.alert.id; })[0], pb = ag.box, pul = still ? 0.5 : 0.5 + 0.5 * Math.sin(now / 120);
         ctx.strokeStyle = 'rgba(239,68,68,' + (0.4 + 0.6 * pul) + ')'; ctx.lineWidth = 3;
         ctx.beginPath(); ctx.arc((pb.x + pb.w / 2) * S, (pb.y + pb.h / 2) * S, 26 + 6 * pul, 0, Math.PI * 2); ctx.stroke();
-        K.pill(ctx, (s.alert.late ? 'LATE ' : '') + ag.alert.toUpperCase(), 10, H - 30, s.alert.late ? '#b45309' : '#dc2626', 11);
+        K.pill(ctx, (s.alert.late ? 'LATE ' : '') + ag.alert.toUpperCase(), 10, H - BAR - 26, s.alert.late ? '#b45309' : '#dc2626', 11);
       }
       // camera footprint and drone
       if (d.row < P.rows.length || !s.done) {
@@ -93,7 +93,7 @@ window.GIGO = window.GIGO || {};
       }
       K.toasts(ctx, s, MW, MW - 40, still);
       ctx.restore();
-      panel(ctx, s, MW, W, H);
+      panel(ctx, s, W, H);
       if (s.done && outroT0 != null) K.outcomeCard(ctx, W, H, s, outroT0, still);
     });
   };

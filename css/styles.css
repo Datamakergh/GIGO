@@ -15,12 +15,6 @@ h1, h2, h3, p { margin: 0; }
 .brand h1 { font-size: 24px; letter-spacing: .02em; font-weight: 800; }
 .brand h1 span { font-weight: 500; color: #93c5fd; margin-left: 6px; font-size: 18px; }
 .brand p { font-size: 12px; color: #94a3b8; }
-.stepper { list-style: none; display: flex; gap: 6px; margin: 0 auto; padding: 0; flex-wrap: wrap; }
-.stepper li { padding: 5px 12px; border-radius: 999px; font-size: 13px; background: #1e293b; color: #94a3b8; counter-increment: s; }
-.stepper li::before { content: counter(s) ". "; opacity: .6; }
-.stepper { counter-reset: s; }
-.stepper li.done { color: #bbf7d0; }
-.stepper li.active { background: var(--brand); color: #fff; font-weight: 700; }
 .ghost { background: transparent; border: 1px solid var(--line); color: inherit; border-radius: 9px; padding: 7px 12px; }
 .topbar .ghost { border-color: #334155; color: #cbd5e1; }
 .ghost:hover:not(:disabled) { background: rgba(100,116,139,.12); }
@@ -127,12 +121,10 @@ canvas.locked { opacity: .92; }
   .panels { grid-template-columns: 1fr; }
   .results { grid-template-columns: 1fr; }
   .card.wide { grid-column: auto; }
-  .stepper { margin: 0; }
 }
 /* motion */
 button { transition: background-color .15s, border-color .15s, color .15s, box-shadow .15s, transform .1s; }
 button:active:not(:disabled) { transform: translateY(1px) scale(.98); }
-.stepper li { transition: background-color .25s, color .25s; }
 .cls { transition: border-color .15s, background-color .15s; }
 @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
 @keyframes arc { from { stroke-dasharray: 0 400; } }
@@ -158,7 +150,19 @@ button:active:not(:disabled) { transform: translateY(1px) scale(.98); }
 .zoom-ctl button:disabled { opacity: .4; cursor: default; }
 
 /* both panels: the view fills the space between header and controls, so the two stages line up
-   (the sim canvas is a wide strip, so it sits centred on a dark backdrop) */
-.panel > .toolbar { margin-top: auto; }
-#panel-sim .sim-stage { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; background: #0f172a; min-height: 0; }
-#panel-sim .sim-stage .chat { flex: 1 1 auto; height: auto; min-height: 420px; }
+   (both canvases are 800x500) */
+.panels { grid-template-rows: auto; }
+.panel { display: grid; grid-row: span 4; grid-template-rows: subgrid; row-gap: 10px; }
+.panel > .panel-head { grid-row: 1; }
+.panel > .class-bar, .panel > .legend { grid-row: 2; align-self: start; }
+.panel > .stage, .panel > .qa-list { grid-row: 3; }
+.panel > .qa-list { contain: size; max-height: none; min-height: 0; align-self: stretch; }
+.panel > .qa-list[hidden] { display: none; }
+.panel > .panel-foot { grid-row: 4; display: flex; flex-direction: column; gap: 10px; }
+.panel-foot > .toolbar { margin-top: auto; }
+.panel-foot > .qa-list[hidden] { display: none; }
+@media (max-width: 1000px) { .panel { display: flex; grid-row: auto; } }
+#panel-sim .sim-stage { flex: none; display: flex; flex-direction: column; position: relative; aspect-ratio: 800 / 500; background: #0f172a; min-height: 0; }
+#panel-sim .sim-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+#panel-sim .legend { align-items: center; }
+#panel-sim .sim-stage .chat { position: absolute; inset: 0; height: auto; min-height: 0; }

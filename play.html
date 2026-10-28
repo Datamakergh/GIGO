@@ -15,13 +15,14 @@
   <div class="brand">
     <a class="back" href="projects.html">&larr; All projects</a>
     <h1 id="scene-title">Simulator</h1>
-    <p id="task"></p>
   </div>
-  <ol id="stepper" class="stepper" aria-label="Learning cycle">
-    <li>Annotate</li><li>Evaluate</li><li>Simulate</li><li>Observe</li><li>Correct</li><li>Improve</li>
-  </ol>
   <button id="btn-startover" class="ghost" type="button">Start over</button>
 </header>
+
+<section class="purpose" aria-labelledby="h-purpose">
+  <h2 id="h-purpose">Why this project matters</h2>
+  <p id="purpose-text"></p>
+</section>
 
 <main class="panels">
   <section class="panel" id="panel-annotate" aria-labelledby="h-annot">
@@ -36,6 +37,7 @@
     <div id="class-bar" class="class-bar" role="group" aria-label="Object class"></div>
     <div class="stage" id="annot-stage"><canvas id="annot-canvas" width="800" height="500" aria-label="Scene to annotate"></canvas></div>
     <ol id="label-list" class="qa-list" hidden></ol>
+    <div class="panel-foot">
     <p id="hint" class="hint"></p>
     <a class="help-link" href="learn.html#scoring">How is it scored?</a>
     <div class="toolbar">
@@ -46,6 +48,7 @@
       <span class="spacer"></span>
       <button id="btn-run" type="button" class="primary">&#9654; Run Simulation</button>
     </div>
+    </div>
   </section>
 
   <section class="panel" id="panel-sim" aria-labelledby="h-sim">
@@ -53,19 +56,22 @@
       <h2 id="h-sim"><span class="num">2</span> <span id="sim-title">Simulator</span></h2>
       <span class="badge" title="The outcome comes from simple rules, not a real AI model">Simulated, not real AI</span>
     </div>
-    <div class="stage sim-stage">
-      <canvas id="sim-canvas" width="800" height="330" aria-label="Simulation"></canvas>
-      <div id="chat" class="chat" hidden></div>
-      <div id="sim-overlay" class="overlay">
-        <div id="sim-idle"></div>
-      </div>
-    </div>
     <ul class="legend" id="legend">
       <li><i style="--c:#22c55e"></i>Detected</li>
       <li><i style="--c:#f59e0b"></i>Weak (loose box)</li>
       <li><i style="--c:#ef4444" class="dash"></i>Not detected</li>
       <li><i style="--c:#f97316" class="dash"></i>Misread class</li>
     </ul>
+    <div class="stage sim-stage">
+      <canvas id="sim-canvas" width="800" height="500" aria-label="Simulation"></canvas>
+      <div id="chat" class="chat" hidden></div>
+      <div id="sim-overlay" class="overlay">
+        <div id="sim-idle"></div>
+      </div>
+    </div>
+    <div class="panel-foot">
+    <p id="sim-hint" class="hint">The coloured boxes show what the AI sees as the run plays out.</p>
+    <a class="help-link" href="learn.html">How does the simulation work?</a>
     <div class="toolbar">
       <div id="view-seg" class="seg" role="group" aria-label="Camera view">
         <button id="btn-view-2d" type="button" aria-pressed="true" title="Top-down view">2D</button>
@@ -77,6 +83,7 @@
       <button id="btn-skip" type="button" class="ghost" hidden>Skip to result</button>
       <span class="spacer"></span>
       <button id="btn-correct" type="button" class="ghost">&larr; Fix my labels</button>
+    </div>
     </div>
   </section>
 </main>

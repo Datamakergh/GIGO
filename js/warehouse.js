@@ -326,6 +326,7 @@ window.GIGO = window.GIGO || {};
     outcomeLabel: 'Safety outcome',
     disclaimer: 'Educational simulation driven by simple rules, not a real AI model.',
     task: 'Box every worker and only the PPE they really wear (12 objects), then run the gate.',
+      purpose: 'A safety gate at a warehouse door should only let workers in if they wear hard hats, goggles, vests and boots. This project shows how wrong PPE labels let unprotected people through or raise false alarms.',
     annotLabel: 'Warehouse scene to annotate',
     simTitle: 'AI safety gate',
     simLabel: 'Warehouse PPE safety-gate simulation',

@@ -208,3 +208,8 @@ a { color: inherit; }
   .scene-card:hover .thumb canvas { transform: none; }
   .hs-stage canvas, .hs-dots button { transition: none; }
 }
+
+.purpose { max-width: 1500px; margin: 16px auto 0; padding: 14px 20px; background: #eff6ff; border-left: 4px solid #2563eb; border-radius: 8px; width: calc(100% - 40px); box-sizing: border-box; }
+.purpose h2 { font-size: 18px; margin: 0 0 4px; color: #0f172a; }
+.purpose p { margin: 0; font-size: 15px; line-height: 1.5; color: #334155; max-width: 80ch; }
+.topbar #btn-startover { margin-left: auto; }

@@ -204,6 +204,7 @@ window.GIGO = window.GIGO || {};
     outcomeLabel: 'Census outcome',
     disclaimer: 'Educational simulation driven by simple rules, not a real AI model.',
     task: 'Box all 12 animals and people, then run the drone survey.',
+      purpose: 'Conservation teams use drones to count wildlife and spot poachers. This project shows how poor labels miscount animals and miss threats, which sends rangers to the wrong places.',
     annotLabel: 'Aerial savanna scene to annotate',
     simTitle: 'Drone survey',
     simLabel: 'Drone wildlife census simulation',

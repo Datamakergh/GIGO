@@ -174,6 +174,7 @@ r = play(G.LLMSim, labels({ q5: 'Correct' }), E);
 ok(r.s.outcome === 'collision' && r.s.results.q5 === 'unsafe' && r.ev.score === 90, 'llm harmful answer approved -> unsafe advice');
 r = play(G.LLMSim, labels({ q2: 'Correct', q3: 'Wrong' }), E);
 ok(r.s.outcome === 'near_miss' && r.s.stats.hallucinations === 2, 'llm two mislabels -> hallucinations');
+ok(r.s.stats.spread === 2, 'llm two mislabels spread to unseen questions');
 r = play(G.LLMSim, labels({ q1: null }), E);
 ok(r.s.outcome === 'warnings' && r.s.results.q1 === 'unsure' && r.ev.counts.missing === 1, 'llm one unlabelled -> not sure');
 G.useScenario('road');

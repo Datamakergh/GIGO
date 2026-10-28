@@ -3,7 +3,7 @@ window.GIGO = window.GIGO || {};
 (function (G) {
   'use strict';
 
-  var R = G.Sim.ROAD, EGO_SCREEN_X = 200;
+  var R = G.Sim.ROAD, EGO_SCREEN_X = 200, WORLD_H = 330;
   var COL = { good: '#22c55e', late: '#f59e0b', missed: '#ef4444', wrong: '#f97316' };
   var reduceMotion = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 
@@ -260,17 +260,19 @@ window.GIGO = window.GIGO || {};
       if (!still && s.ego.crashed && s.crashAt != null) shake = Math.max(0, 1 - (s.t - s.crashAt) / 0.6) * 6;
       ctx.save();
       if (shake) ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
+      var off = mode === '3d' ? 0 : (H - WORLD_H) / 2;   // the 2D world is 330 tall; centre it and extend the scenery
+      if (off) ctx.translate(0, off);
 
       var blink = still || Math.floor(s.t * 2.5) % 2 === 0;
       if (mode === '3d') {
         G.Sim3D.world(ctx, W, H, s, { still: still, skids: skids, trees: trees(s), blink: blink, impact: impact });
       } else {
         // rooftops
-        ctx.fillStyle = '#8fa0b4'; ctx.fillRect(-10, -10, W + 20, 52);
+        ctx.fillStyle = '#8fa0b4'; ctx.fillRect(-10, -10 - off, W + 20, 52 + off);
         for (var k = Math.floor(camX / 110) - 1; k * 110 - camX < W + 110; k++) {
           var bx = k * 110 - camX, bw = 96 + hash(k) * 10, tone = ['#a3b2c3', '#97a7ba', '#adbac9', '#9badc0'][Math.floor(hash(k + 9) * 4)];
-          ctx.fillStyle = tone; ctx.fillRect(bx, -4, bw, 42);
-          ctx.strokeStyle = 'rgba(15,23,42,.18)'; ctx.lineWidth = 2; ctx.strokeRect(bx + 1, -4, bw - 2, 42);
+          ctx.fillStyle = tone; ctx.fillRect(bx, -4 - off, bw, 42 + off);
+          ctx.strokeStyle = 'rgba(15,23,42,.18)'; ctx.lineWidth = 2; ctx.strokeRect(bx + 1, -4 - off, bw - 2, 42 + off);
           ctx.fillStyle = 'rgba(255,255,255,.35)';
           ctx.fillRect(bx + 10 + hash(k + 3) * 40, 8, 18, 12);
           ctx.fillStyle = 'rgba(15,23,42,.15)'; ctx.fillRect(bx + 12 + hash(k + 3) * 40, 20, 18, 3);
@@ -285,7 +287,7 @@ window.GIGO = window.GIGO || {};
         ctx.moveTo(-10, 70); ctx.lineTo(W + 10, 70); ctx.moveTo(-10, 292); ctx.lineTo(W + 10, 292);
         ctx.stroke();
         ctx.fillStyle = '#b4bbc4'; ctx.fillRect(-10, 95, W + 20, 5); ctx.fillRect(-10, 260, W + 20, 5);
-        ctx.fillStyle = '#86bb7b'; ctx.fillRect(-10, 320, W + 20, 20);
+        ctx.fillStyle = '#86bb7b'; ctx.fillRect(-10, 320, W + 20, 20 + off);
         ctx.fillStyle = '#6fa868'; ctx.fillRect(-10, 320, W + 20, 3);
 
         // road

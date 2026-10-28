@@ -25,10 +25,16 @@ window.GIGO = window.GIGO || {};
   function create(det) {
     det = det || {};
     var s = { t: 0, done: false, endAt: null, events: [], results: {}, outcome: null, summary: '',
-      msgs: [], next: 0, stats: { unsafe: 0, hallucinations: 0, unsure: 0, correct: 0 } };
+      msgs: [], next: 0, nMain: G.GROUND_TRUTH.length, stats: { unsafe: 0, hallucinations: 0, unsure: 0, correct: 0, spread: 0 } };
     G.GROUND_TRUTH.forEach(function (g, i) {
       var r = reply(g, det[g.id] || { mode: 'missed' });
       s.msgs.push({ id: g.id, q: g.q, text: r.text, kind: r.kind, t0: 0.3 + i * P.every });
+    });
+    /* then the same bot meets questions it was never trained on: bad labels leak into them */
+    G.GROUND_TRUTH.forEach(function (g, i) {
+      var rel = { cls: g.cls, a: g.related.a, alt: g.related.alt, fix: g.related.fix, unsafe: g.unsafe };
+      var r = reply(rel, det[g.id] || { mode: 'missed' });
+      s.msgs.push({ id: g.id, q: g.related.q, text: r.text, kind: r.kind, fresh: true, t0: 0.3 + (s.nMain + i) * P.every });
     });
     return s;
   }
@@ -38,6 +44,10 @@ window.GIGO = window.GIGO || {};
     s.t += dt;
     while (s.next < s.msgs.length && s.t >= s.msgs[s.next].t0 + P.typing + P.reveal) {
       var m = s.msgs[s.next++];
+      if (m.fresh) {
+        if (m.kind === 'unsafe' || m.kind === 'hallucination') { s.stats.spread += 1; note(s, 'bad', 'The bad label spread to a new question.', m.id); }
+        continue;
+      }
       if (m.kind === 'correct') { s.stats.correct += 1; s.results[m.id] = 'correct'; }
       else if (m.kind === 'unsafe') { s.stats.unsafe += 1; s.results[m.id] = 'unsafe'; note(s, 'bad', 'Unsafe advice given.', m.id); }
       else if (m.kind === 'hallucination') { s.stats.hallucinations += 1; s.results[m.id] = 'hallucination'; note(s, 'bad', 'Hallucination: confident and wrong.', m.id); }
@@ -51,7 +61,7 @@ window.GIGO = window.GIGO || {};
     s.done = true;
     var st = s.stats;
     s.outcome = st.unsafe ? 'collision' : st.hallucinations ? 'near_miss' : st.unsure ? 'warnings' : 'safe';
-    s.summary = 'Answered ' + st.correct + ' of ' + s.msgs.length + ' correctly.';
+    s.summary = 'Answered ' + st.correct + ' of ' + s.nMain + ' correctly.';
     note(s, s.outcome === 'safe' ? 'ok' : s.outcome === 'warnings' ? 'warn' : 'bad', G.MESSAGES.outcomes[s.outcome].label + '. ' + s.summary);
   }
 

@@ -39,10 +39,10 @@ window.GIGO = window.GIGO || {};
         if (n.shown !== txt) { n.bot.textContent = txt; n.shown = txt; n.typing = false; scroll = true; }
         if (full && !n.tagged) {
           var t = TAG[m.kind]; n.tagged = true;
-          n.bot.classList.add(t[1]); n.bot.appendChild(el('em', 'msg-tag ' + t[1], t[0]));
+          n.bot.classList.add(t[1]); n.bot.appendChild(el('em', 'msg-tag ' + t[1], (m.fresh ? 'New question · ' : '') + t[0]));
         }
       });
-      var shown = s.msgs.filter(function (m, i) { return nodes[i] && nodes[i].tagged; }).length;
+      var shown = s.msgs.filter(function (m, i) { return !m.fresh && nodes[i] && nodes[i].tagged; }).length;
       head.lastChild.textContent = shown ? s.stats.correct + ' / ' + shown + ' right' : 'listening';
       if (s.done && !end) {
         var o = G.MESSAGES.outcomes[s.outcome];

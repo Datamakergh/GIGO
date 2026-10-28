@@ -1,7 +1,7 @@
 ---
 coverage: lazy
 layout: single
-verified: 339f887
+verified: 037638e
 files:
 ignore:
 ---
@@ -35,3 +35,7 @@ Gotchas: GT boxes must not overlap (matching); critical objects = car_ahead, ped
 - 2026-10-27: Overview hero is a slideshow (js/hero.js, G.initHero): one live-drawn canvas per scene, 2 s interval, pauses on hover/focus, no autoplay under prefers-reduced-motion. Road slide keeps hand-picked objects; other box scenes pick critical objects and a non-overlapping loose box.
 - 2026-10-27: Branding: datamaker logo (assets/logo.png) in shared nav, favicon assets/favicon.png on every page. New pages must add the <link rel="icon"> lines.
 - 2026-10-27: play.html panels are equal width (1fr 1fr); sim stage flex-fills its panel on a dark backdrop with the 800x330 canvas centred, so both stages and bottom toolbars line up.
+- 2026-10-27: Answer key draws each GT box in its class colour with a class tag under it (keyLabels in annotator.js: biggest boxes first, smaller ones step aside so nested PPE tags don't overlap).
+- 2026-10-28: Sim canvas is now 800x500 (no dark bars). Views keep the 330-tall logical world and translate by (H-330)/2, extending scenery; drone census is a bottom strip over a full-bleed map, crop rows stretch to H. Legend sits above the sim stage (aligned with the class bar); stage is flex:none, aspect 800/500.
+- 2026-10-28: play.html panels use CSS subgrid (4 rows: head, class-bar/legend, stage, .panel-foot) so the label and sim stages align horizontally; stacked layout (<=1000px) falls back to flex.
+- 2026-10-28: LLM test appends one unseen 'related' question per item (fresh msgs); approved wrong labels leak into them (stats.spread). #label-list sits in the stage grid row; chat is absolutely positioned in the sim stage.

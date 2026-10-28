@@ -207,9 +207,10 @@
     speed = text ? 1 : 0.5; $('btn-speed').textContent = speed + '×';
     ['annot-stage', 'class-bar', 'btn-delete', 'btn-labels', 'sim-canvas', 'legend'].forEach(function (n) { $(n).hidden = text; });
     $('label-list').hidden = !text; $('chat').hidden = !text;
+    $('sim-hint').textContent = text ? 'The chatbot answers from what you marked Correct.' : 'The coloured boxes show what the AI sees as the run plays out.';
     $('progress-label').textContent = text ? 'Answers labelled' : 'Objects labelled';
     $('scene-title').textContent = sc.card.title;
-    $('task').textContent = sc.task;
+    $('purpose-text').textContent = sc.purpose;
     document.title = sc.card.title + ' – GIGO';
     $('sim-title').textContent = sc.simTitle;
     $('sim-idle').innerHTML = sc.idle;
