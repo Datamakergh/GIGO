@@ -5,7 +5,7 @@ var fs = require('fs'), path = require('path'), vm = require('vm');
 var sandbox = { window: {} };
 sandbox.window.window = sandbox.window;
 vm.createContext(sandbox);
-['config', 'evaluator', 'simulator', 'warehouse', 'ppe-sim', 'drone', 'drone-sim', 'crop', 'crop-sim', 'llm', 'llm-sim'].forEach(function (f) {
+['config', 'evaluator', 'simulator', 'warehouse', 'ppe-sim', 'drone', 'drone-sim', 'crop', 'crop-sim', 'llm', 'llm-sim', 'llm-pipeline'].forEach(function (f) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'js', f + '.js'), 'utf8'), sandbox, { filename: f + '.js' });
 });
 var G = sandbox.window.GIGO;
@@ -165,19 +165,61 @@ G.useScenario('llm');
 function labels(over) {
   return G.GROUND_TRUTH.map(function (g) { return { id: g.id, cls: over && over[g.id] !== undefined ? over[g.id] : g.cls }; }).filter(function (l) { return l.cls; });
 }
+function other(id) { var g = G.GROUND_TRUTH.filter(function (x) { return x.id === id; })[0]; return g.cls === 'A' ? 'B' : 'A'; }
 var E = G.evaluateLabels;
-r = play(G.LLMSim, labels(), E);
-ok(r.ev.score === 100 && r.s.outcome === 'safe' && r.s.stats.correct === 10, 'llm all right -> reliable chatbot');
-r = play(G.LLMSim, [], E);
-ok(r.ev.score === 0 && r.s.outcome === 'collision' && r.s.stats.unsafe === 2 && r.s.stats.unsure === 8, 'llm nothing labelled -> unsafe advice + not sure');
-r = play(G.LLMSim, labels({ q5: 'Correct' }), E);
-ok(r.s.outcome === 'collision' && r.s.results.q5 === 'unsafe' && r.ev.score === 90, 'llm harmful answer approved -> unsafe advice');
-r = play(G.LLMSim, labels({ q2: 'Correct', q3: 'Wrong' }), E);
-ok(r.s.outcome === 'near_miss' && r.s.stats.hallucinations === 2, 'llm two mislabels -> hallucinations');
-ok(r.s.stats.spread === 2, 'llm two mislabels spread to unseen questions');
-r = play(G.LLMSim, labels({ q1: null }), E);
+/* chat with the bot: ask every grounded question (g.q) after labelling, then finish */
+function chat(lbls, qs) {
+  var ev = E(lbls, G.GROUND_TRUTH), s = G.LLMSim.create(G.buildDetections(ev));
+  (qs || G.GROUND_TRUTH.map(function (g) { return g.q; })).forEach(function (q) { G.LLMSim.ask(s, q); });
+  G.LLMSim.finish(s);
+  return { ev: ev, s: s };
+}
+r = chat(labels());
+ok(r.ev.score === 100 && r.s.outcome === 'safe' && r.s.stats.correct === 10 && r.s.stats.asked === 10, 'llm all right -> reliable chatbot');
+r = chat([]);
+ok(r.ev.score === 0 && r.s.outcome === 'warnings' && r.s.stats.unsafe === 0 && r.s.stats.unsure === 10, 'llm nothing labelled -> always not sure');
+r = chat(labels({ q5: other('q5') }));
+ok(r.s.outcome === 'collision' && r.s.results.q5 === 'unsafe' && r.ev.score === 90, 'llm harmful answer picked -> unsafe advice');
+r = chat(labels({ q2: other('q2'), q3: other('q3') }));
+ok(r.s.outcome === 'near_miss' && r.s.stats.hallucinations === 2, 'llm two wrong picks -> hallucinations');
+r = chat(labels({ q1: null }));
 ok(r.s.outcome === 'warnings' && r.s.results.q1 === 'unsure' && r.ev.counts.missing === 1, 'llm one unlabelled -> not sure');
+
+// keyword matching: rephrased questions still find their topic; every suggested question maps back to its own topic
+G.GROUND_TRUTH.forEach(function (g) {
+  ok(G.matchTopic(g.q) === g.id, 'llm trained question matches ' + g.id);
+  ok(G.matchTopic(g.ask) === g.id, 'llm rephrased question matches ' + g.id + ' (got ' + G.matchTopic(g.ask) + ')');
+});
+ok(G.matchTopic('bleach swallowed by my child') === 'q5' && G.matchTopic('how many legs do spiders have') === 'q4', 'llm matches on key words');
+ok(G.matchTopic('what is love') === null, 'llm no key words -> no match');
+
+// live chat behaviour
+var cs = G.LLMSim.create(G.buildDetections(E(labels({ q2: other('q2') }), G.GROUND_TRUTH)));
+var m = G.LLMSim.ask(cs, 'what is love');
+ok(m.kind === 'nomatch' && /Try asking about/.test(m.text) && !cs.stats.asked, 'llm no match -> rephrase hint');
+m = G.LLMSim.ask(cs, 'When did Kenya become independent?');
+ok(m.kind === 'hallucination' && /Q2/.test(m.tip) && m.tipId === 'q2', 'llm wrong pick -> tip pointing at the question');
+G.LLMSim.ask(cs, 'kenya independence year');
+ok(cs.stats.hallucinations === 1 && cs.stats.asked === 1 && cs.msgs.length === 3, 'llm asking a topic twice counts it once');
+ok(G.LLMSim.untried(cs).length === 9, 'llm untried topics shrink as they are asked');
+r = chat(labels(), ['capital of kenya?']);
+ok(r.s.outcome === 'safe' && r.s.stats.asked === 1 && /1 of 10/.test(r.s.summary), 'llm asking only one topic is scored on what was asked');
+r = chat(labels(), ['hello']);
+ok(r.s.outcome === 'warnings', 'llm nothing matched -> warnings');
 G.useScenario('road');
+
+// ---- LLM pipeline rules
+function pipe(f, c, e) { return G.Pipeline.run({ format: f, cats: c, edge: e }); }
+var p = pipe('loose', 'loose', 'loose');
+ok(p.verdict === 'garbage' && !p.isJson, 'pipeline all loose -> garbage paragraph');
+p = pipe('strict', 'strict', 'strict');
+ok(p.verdict === 'quality' && JSON.parse(p.text).urgency === 'HIGH' && p.checks.every(function (k) { return k.pass; }), 'pipeline all strict -> quality JSON, urgency HIGH');
+p = pipe('strict', 'strict', 'loose');
+ok(p.verdict === 'partial' && p.urgency === 'MEDIUM' && !p.checks[2].pass, 'pipeline no edge rule -> partial, urgency MEDIUM');
+p = pipe('strict', 'loose', 'strict');
+ok(p.verdict === 'partial' && JSON.parse(p.text).mood && !p.checks[1].pass, 'pipeline loose categories -> partial, schema fails');
+p = pipe('loose', 'strict', 'strict');
+ok(p.verdict === 'garbage' && !p.checks.some(function (k) { return k.pass; }), 'pipeline loose format -> garbage even with strict rules');
 
 console.log(failed ? '\n' + failed + ' FAILED' : '\nall passed');
 process.exit(failed ? 1 : 0);

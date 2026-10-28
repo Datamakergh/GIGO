@@ -161,7 +161,7 @@ button:active:not(:disabled) { transform: translateY(1px) scale(.98); }
 .panel > .panel-foot { grid-row: 4; display: flex; flex-direction: column; gap: 10px; }
 .panel-foot > .toolbar { margin-top: auto; }
 .panel-foot > .qa-list[hidden] { display: none; }
-@media (max-width: 1000px) { .panel { display: flex; grid-row: auto; } }
+@media (max-width: 1000px) { .panel { display: flex; grid-row: auto; } .panel > .qa-list { contain: none; max-height: 520px; } }
 #panel-sim .sim-stage { flex: none; display: flex; flex-direction: column; position: relative; aspect-ratio: 800 / 500; background: #0f172a; min-height: 0; }
 #panel-sim .sim-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 #panel-sim .legend { align-items: center; }

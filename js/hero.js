@@ -68,18 +68,18 @@ window.GIGO = window.GIGO || {};
     return { x: x, y: y, w: w, h: h };
   }
 
-  // LLM: a chat mock with a correctly approved answer, a caught wrong one and a missed unsafe one
+  // LLM: a chat mock with two correct picks and a missed unsafe one
   function drawChat(ctx, gt) {
     var g = ctx.createLinearGradient(0, 0, 800, 500);
     g.addColorStop(0, '#1e293b'); g.addColorStop(1, '#0f172a');
     ctx.fillStyle = g; ctx.fillRect(0, 0, 800, 500);
     var get = function (k) { return gt.filter(function (x) { return x.id === k; })[0]; };
-    var rows = [[get('q1'), 'Correct', OK, false], [get('q4'), 'Wrong', OK, false], [get('q5'), 'MISSED', BAD, true]];
+    var rows = [[get('q1'), 'Picked', OK, false], [get('q4'), 'Picked', OK, false], [get('q5'), 'MISSED', BAD, true]];
     var y = 28;
     rows.forEach(function (r) {
       var q = bubble(ctx, r[0].q, true, y, '#2563eb', '#fff');
       y = q.y + q.h + 30;
-      var a = bubble(ctx, r[0].a, false, y, r[3] ? '#7f1d1d' : '#334155', r[3] ? '#fecaca' : '#e2e8f0');
+      var a = bubble(ctx, r[3] ? r[0].bad : r[0].a, false, y, r[3] ? '#7f1d1d' : '#334155', r[3] ? '#fecaca' : '#e2e8f0');
       ctx.save(); ctx.lineWidth = 3; ctx.strokeStyle = r[2]; if (r[3]) ctx.setLineDash([9, 6]);
       G.roundRect(ctx, a.x - 4, a.y - 4, a.w + 8, a.h + 8, 16); ctx.stroke(); ctx.restore();
       chip(ctx, a.x + a.w + 14, a.y + a.h / 2 - 12, r[1], r[2]);

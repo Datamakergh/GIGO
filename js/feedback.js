@@ -27,6 +27,7 @@ window.GIGO = window.GIGO || {};
   /* Why did this object matter in the drive? */
   function consequence(g, r, sim) {
     var res = sim.results[g.id], S = G.SCENARIO;
+    if (isText() && !res) return 'Not asked in the chat, so its effect was not tested.';
     if (!g.critical && res === 'missed_warning') return 'Simulated effect: ' + g.warn;
     var t = (g.critical ? S.critical : S.minor)[res];
     return t ? t.replace(/\{short\}/g, g.short).replace(/\{alert\}/g, g.alert || 'alert') : '';
@@ -37,7 +38,7 @@ window.GIGO = window.GIGO || {};
   function cause(g, r) {
     if (isText()) {
       if (r.verdict === 'missing') return 'You left it unlabelled.';
-      return 'You marked it ' + r.predCls + ', but it is ' + g.cls + '.';
+      return 'You picked ' + r.predCls + ', but the right answer is ' + g.cls + '.';
     }
     if (r.verdict === 'missing') {
       return r.bestIoU >= 0.15

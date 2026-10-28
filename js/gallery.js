@@ -14,7 +14,7 @@ window.GIGO = window.GIGO || {};
       var mock = el('div', 'thumb-chat');
       sc.groundTruth.slice(0, 3).forEach(function (g, i) {
         mock.appendChild(el('span', 'tc-user', g.q));
-        var b = el('span', 'tc-bot ' + (i === 1 ? 'bad' : 'ok'), i === 1 ? g.a : g.cls === 'Correct' ? g.a : g.fix);
+        var b = el('span', 'tc-bot ' + (i === 1 ? 'bad' : 'ok'), i === 1 ? g.bad : g.a);
         mock.appendChild(b);
       });
       wrap.appendChild(mock);

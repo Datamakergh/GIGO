@@ -38,7 +38,7 @@
     var sel = annot.getSelected(), cur = sel ? sel.cls : annot.getClass();
     Array.prototype.forEach.call(bar.children, function (b) { b.classList.toggle('on', b.dataset.cls === cur); });
     $('btn-delete').disabled = !sel || phase === 'running';
-    $('hint').textContent = G.SCENARIO.kind === 'text' ? 'Tap a button to label; tap again to clear.'
+    $('hint').textContent = G.SCENARIO.kind === 'text' ? 'Tap an option to pick it; tap again to clear.'
       : sel ? 'Drag to move, handles to resize, Delete to remove.' : 'Pick a class, then drag a box around an object.';
   }
 
@@ -84,10 +84,13 @@
     raf = requestAnimationFrame(frame);
   }
 
+  function isText() { return G.SCENARIO.kind === 'text'; }
+  function runLabel(again) { return isText() ? (again ? '↻ Chat again' : '▶ Start chat') : (again ? '↻ Run Simulation again' : '▶ Run Simulation'); }
+
   function setRunning(on) {
     $('btn-run').disabled = on;
-    $('btn-skip').hidden = !on;
-    $('btn-pause').hidden = !on;
+    $('btn-skip').hidden = !on || isText();
+    $('btn-pause').hidden = !on || isText();
     if (!on) setPaused(false);
     annot.setLocked(on);
     syncClassBar();
@@ -102,7 +105,8 @@
     setStep(1);
     showIdle(false);
     phase = 'running'; setRunning(true);
-    $('btn-run').textContent = '▶ Running…';
+    $('btn-run').textContent = isText() ? '● Chat live' : '▶ Running…';
+    if (isText()) { view.draw(sim, det); view.focus(); }
     acc = 0; last = performance.now();
     setTimeout(function () { if (phase === 'running') setStep(2); }, 500);
     cancelAnimationFrame(raf); raf = requestAnimationFrame(frame);
@@ -122,7 +126,7 @@
     history.push(G.Feedback.record(ev, sim));
     G.Feedback.showDrive(ev, sim, history, { onLocate: locate });
     setRunning(false);
-    $('btn-run').textContent = '↻ Run Simulation again';
+    $('btn-run').textContent = runLabel(true);
     $('btn-key').disabled = false;
     var improved = history.length > 1 && history[history.length - 1].score > history[history.length - 2].score;
     setStep(improved ? 5 : 3);
@@ -173,7 +177,7 @@
     phase = history.length ? 'done' : 'annotate';
     setRunning(false);
     preview(); showIdle(true);
-    $('btn-run').textContent = history.length ? '↻ Run Simulation again' : '▶ Run Simulation';
+    $('btn-run').textContent = runLabel(history.length > 0);
     setStep(history.length ? 4 : 0);
   });
   $('btn-correct').addEventListener('click', function () {
@@ -187,7 +191,7 @@
     history = []; annot.setShowKey(false); $('btn-key').setAttribute('aria-pressed', 'false'); $('btn-key').disabled = true;
     annot.clear(); G.Feedback.reset();
     phase = 'annotate'; setRunning(false); preview(); showIdle(true);
-    $('btn-run').textContent = '▶ Run Simulation'; setStep(0);
+    $('btn-run').textContent = runLabel(false); setStep(0);
   }
   $('btn-startover').addEventListener('click', function () {
     if (!confirm('Start over? This removes your boxes and the run history.')) return;
@@ -204,10 +208,12 @@
     if (sc.has3d) view.setMode(mode3d);
     annot = text ? textAnnot : boxAnnot;
     $('view-seg').hidden = !sc.has3d;
-    speed = text ? 1 : 0.5; $('btn-speed').textContent = speed + '×';
+    speed = 0.5; $('btn-speed').textContent = speed + '×'; $('btn-speed').hidden = text;
     ['annot-stage', 'class-bar', 'btn-delete', 'btn-labels', 'sim-canvas', 'legend'].forEach(function (n) { $(n).hidden = text; });
     $('label-list').hidden = !text; $('chat').hidden = !text;
-    $('sim-hint').textContent = text ? 'The chatbot answers from what you marked Correct.' : 'The coloured boxes show what the AI sees as the run plays out.';
+    $('pipeline').hidden = !text;
+    if (text) G.Pipeline.mount($('pipeline'));
+    $('sim-hint').textContent = text ? 'Ask in your own words. The bot matches key words to the answers you picked.' : 'The coloured boxes show what the AI sees as the run plays out.';
     $('progress-label').textContent = text ? 'Answers labelled' : 'Objects labelled';
     $('scene-title').textContent = sc.card.title;
     $('purpose-text').textContent = sc.purpose;
@@ -230,6 +236,17 @@
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' && e.ctrlKey && phase !== 'running') run();
   });
+
+  views.LLMView.onAsk = function (text) {
+    if (phase !== 'running' || !S.ask) return;
+    S.ask(sim, text); view.draw(sim, det);
+  };
+  views.LLMView.onFinish = function () {
+    if (phase !== 'running') return;
+    S.finish(sim); view.draw(sim, det);
+    cancelAnimationFrame(raf); finishRun();
+  };
+  views.LLMView.onLocate = function (id) { locate(id); };
 
   $('core-message').textContent = G.MESSAGES.core;
   var want = (/[?&]scene=([a-z0-9]+)/.exec(location.search) || [])[1];

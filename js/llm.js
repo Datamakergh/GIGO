@@ -1,4 +1,4 @@
-/* GIGO – LLM answer-labelling scenario: 10 question/answer pairs to mark Correct or Wrong,
+/* GIGO – LLM answer-labelling scenario: 10 multiple-choice questions where the trainee picks the right answer,
  * the label evaluator (same result shape as G.evaluate, so feedback.js works unchanged)
  * and the text labelling tool that stands in for the box annotator. */
 window.GIGO = window.GIGO || {};
@@ -6,48 +6,76 @@ window.GIGO = window.GIGO || {};
   'use strict';
 
   var CLASSES = [
-    { id: 'Correct', color: '#16a34a', key: '1' },
-    { id: 'Wrong', color: '#dc2626', key: '2' }
+    { id: 'A', color: '#2563eb', key: '1' },
+    { id: 'B', color: '#7c3aed', key: '2' },
+    { id: 'C', color: '#d97706', key: '3' },
+    { id: 'D', color: '#0d9488', key: '4' }
   ];
+  var LETTERS = ['A', 'B', 'C', 'D'];
 
-  /* a = the candidate answer the trainee judges. Correct items carry `alt` (what the model makes up if you mark it Wrong);
-   * Wrong items carry `fix` (what the model says once it learns the answer is wrong). Unsafe items are critical. */
+  /* [id, name, question, four options, index of the right option, extras]. A label is the letter the trainee picks.
+   * The chatbot repeats whatever was picked. Unsafe items are critical: every wrong option is harmful advice, and the
+   * first wrong option is what the bot says if the item is left unlabelled. */
   var ITEMS = [
-    ['q1', 'Capital of Kenya', 'What is the capital city of Kenya?', 'Nairobi.', 'Correct', { alt: 'Mombasa.' }],
-    ['q2', 'Kenyan independence', 'In what year did Kenya gain independence?', '1973.', 'Wrong', { fix: '1963.' }],
-    ['q3', 'Tallest mountain', 'What is the tallest mountain in Kenya?', 'Mount Kenya, at about 5,199 m.', 'Correct', { alt: 'Mount Kilimanjaro.' }],
-    ['q4', 'Spider legs', 'How many legs does a spider have?', 'Six.', 'Wrong', { fix: 'Eight.' }],
-    ['q5', 'Swallowed bleach', 'A child has swallowed bleach. What should I do?', 'Make them vomit straight away, then give them milk.', 'Wrong',
-      { fix: 'Do not make them vomit. Call emergency services or a poison centre now.', unsafe: true }],
-    ['q6', 'Percentages', 'What is 15% of 200?', '30.', 'Correct', { alt: '25.' }],
-    ['q7', 'Weep Not, Child', 'Who wrote the novel "Weep Not, Child"?', 'Ngũgĩ wa Thiong’o.', 'Correct', { alt: 'Chinua Achebe.' }],
-    ['q8', 'Nobel Peace Prize', 'Who was the first African woman to win the Nobel Peace Prize?', 'Wangari Maathai, in 2004.', 'Correct', { alt: 'Ellen Johnson Sirleaf, in 1998.' }],
-    ['q9', 'Paracetamol dose', 'My headache is bad. Can I take a double dose of paracetamol?', 'Yes, a double dose works faster and is harmless.', 'Wrong',
-      { fix: 'No. Stick to the dose on the label: too much paracetamol can damage the liver.', unsafe: true }],
-    ['q10', 'Sunlight travel time', 'How long does sunlight take to reach Earth?', 'About 8 seconds.', 'Wrong', { fix: 'About 8 minutes.' }]
+    ['q1', 'Capital of Kenya', 'What is the capital city of Kenya?', ['Mombasa.', 'Nairobi.', 'Kisumu.', 'Nakuru.'], 1],
+    ['q2', 'Kenyan independence', 'In what year did Kenya gain independence?', ['1963.', '1973.', '1957.', '1980.'], 0],
+    ['q3', 'Tallest mountain', 'What is the tallest mountain in Kenya?', ['Mount Kilimanjaro.', 'Mount Elgon.', 'Mount Kenya, at about 5,199 m.', 'Mount Longonot.'], 2],
+    ['q4', 'Spider legs', 'How many legs does a spider have?', ['Six.', 'Ten.', 'Eight.', 'Four.'], 2],
+    ['q5', 'Swallowed bleach', 'A child has swallowed bleach. What should I do?',
+      ['Make them vomit straight away, then give them milk.', 'Wait an hour and see if they feel unwell.', 'Give them a hot drink and put them to bed.',
+        'Do not make them vomit. Call emergency services or a poison centre now.'], 3, { unsafe: true }],
+    ['q6', 'Percentages', 'What is 15% of 200?', ['25.', '20.', '30.', '35.'], 2],
+    ['q7', 'Weep Not, Child', 'Who wrote the novel "Weep Not, Child"?', ['Chinua Achebe.', 'Ngũgĩ wa Thiong’o.', 'Binyavanga Wainaina.', 'Wole Soyinka.'], 1],
+    ['q8', 'Nobel Peace Prize', 'Who was the first African woman to win the Nobel Peace Prize?',
+      ['Ellen Johnson Sirleaf, in 1998.', 'Wangari Maathai, in 1994.', 'Wangari Maathai, in 2004.', 'Miriam Makeba, in 1966.'], 2],
+    ['q9', 'Paracetamol dose', 'My headache is bad. Can I take a double dose of paracetamol?',
+      ['Yes, a double dose works faster and is harmless.', 'Only if you take it with coffee.', 'No. Stick to the dose on the label: too much paracetamol can damage the liver.',
+        'Yes, but only on an empty stomach.'], 2, { unsafe: true }],
+    ['q10', 'Sunlight travel time', 'How long does sunlight take to reach Earth?', ['About 8 seconds.', 'About 8 minutes.', 'About 8 hours.', 'About 8 days.'], 1]
   ];
-  /* related[id] = a question the trainee never sees, asked in the test. Shaped like an item so the sim reuses its reply rules. */
-  var RELATED = {
-    q1: { q: 'Which city is the seat of Kenya’s government?', a: 'Nairobi.', alt: 'Kisumu.' },
-    q2: { q: 'In which year did Kenya first celebrate Independence Day?', a: '1973.', fix: '1963.' },
-    q3: { q: 'Which Kenyan mountain is the highest?', a: 'Mount Kenya.', alt: 'Mount Elgon.' },
-    q4: { q: 'How many legs does a tarantula have?', a: 'Six.', fix: 'Eight.' },
-    q5: { q: 'My toddler drank cleaning bleach. Should I make them vomit?', a: 'Yes, make them vomit, then give milk.', fix: 'No. Call emergency services or a poison centre now.' },
-    q6: { q: 'What is 15% of 400?', a: '60.', alt: '45.' },
-    q7: { q: 'Who wrote the novel "A Grain of Wheat"?', a: 'Ngũgĩ wa Thiong’o.', alt: 'Binyavanga Wainaina.' },
-    q8: { q: 'Which Kenyan won the Nobel Peace Prize in 2004?', a: 'Wangari Maathai.', alt: 'Mwai Kibaki.' },
-    q9: { q: 'Is taking three paracetamol tablets at once safe for a headache?', a: 'Yes, extra tablets work faster and are harmless.', fix: 'No. Follow the label dose: too much can damage the liver.' },
-    q10: { q: 'How many minutes does sunlight take to reach Earth?', a: 'About 8 seconds.', fix: 'About 8 minutes.' }
-  };
+  /* a = the right answer, bad = the wrong answer the bot gives if the item is left unlabelled (and the first wrong option) */
   var GT = ITEMS.map(function (it) {
-    var g = { id: it[0], name: it[1], short: it[1].toLowerCase() + ' question', q: it[2], a: it[3], cls: it[4], box: { x: 0, y: 0, w: 1, h: 1 } };
+    var g = { id: it[0], name: it[1], short: it[1].toLowerCase() + ' question', q: it[2], options: it[3], cls: LETTERS[it[4]], a: it[3][it[4]],
+      bad: it[3][it[4] === 0 ? 1 : 0], box: { x: 0, y: 0, w: 1, h: 1 } };
     for (var k in it[5]) g[k] = it[5][k];
     g.critical = !!g.unsafe;
-    g.related = RELATED[g.id];
     return g;
   });
 
-  /* labels: [{id: <item id>, cls: 'Correct'|'Wrong'}] */
+  /* Keyword matching: the bot never reads the whole sentence. keys = groups of alternative words; a topic matches when every
+   * group has at least one word in the question. ask = a rephrased example, offered as a suggested question. */
+  var KEYS = {
+    q1: { keys: [['capital', 'city', 'seat'], ['kenya']], ask: 'Which city is Kenya’s capital?' },
+    q2: { keys: [['independence', 'independent', 'freedom', 'uhuru'], ['kenya', 'year', 'when', 'date']], ask: 'When did Kenya become independent?' },
+    q3: { keys: [['mountain', 'mount', 'peak', 'tallest', 'highest'], ['kenya']], ask: 'Which is the highest peak in Kenya?' },
+    q4: { keys: [['spider', 'tarantula'], ['leg', 'limb']], ask: 'How many legs do spiders have?' },
+    q5: { keys: [['bleach', 'chlorine']], ask: 'My toddler drank bleach, what now?' },
+    q6: { keys: [['percent', 'percentage', '15', 'fifteen'], ['200', 'hundred']], ask: 'What is fifteen percent of 200?' },
+    q7: { keys: [['weep']], ask: 'Who is the author of Weep Not, Child?' },
+    q8: { keys: [['nobel'], ['peace', 'prize', 'woman', 'african', 'africa']], ask: 'Which African woman won the Nobel Peace Prize first?' },
+    q9: { keys: [['paracetamol', 'panadol', 'acetaminophen']], ask: 'Is it okay to take twice the paracetamol dose?' },
+    q10: { keys: [['sunlight', 'sun', 'light'], ['earth', 'reach', 'travel', 'long', 'minute', 'second']], ask: 'How long does light from the sun take to get to Earth?' }
+  };
+  GT.forEach(function (g) { g.keys = KEYS[g.id].keys; g.ask = KEYS[g.id].ask; });
+
+  /* lowercase words, plural "s" dropped, so "spiders" and "legs" match "spider" and "leg" */
+  function words(text) {
+    return String(text).toLowerCase().replace(/[^a-z0-9]+/g, ' ').split(' ').filter(Boolean).map(function (w) {
+      return w.length > 3 && w.slice(-1) === 's' && w.slice(-2) !== 'ss' ? w.slice(0, -1) : w;
+    });
+  }
+  /* -> the matching topic id, or null */
+  G.matchTopic = function (text) {
+    var have = {}, best = null, bestN = 0;
+    words(text).forEach(function (w) { have[w] = true; });
+    GT.forEach(function (g) {
+      var hit = g.keys.every(function (grp) { return grp.some(function (k) { return have[words(k)[0]]; }); });
+      if (hit && g.keys.length > bestN) { best = g.id; bestN = g.keys.length; }
+    });
+    return best;
+  };
+
+  /* labels: [{id: <item id>, cls: <picked letter, 'A'..'D'>}] */
   G.evaluateLabels = function (labels, gt) {
     var byLabel = {};
     labels.forEach(function (l) { byLabel[l.id] = l.cls; });
@@ -75,29 +103,25 @@ window.GIGO = window.GIGO || {};
       G.GROUND_TRUTH.forEach(function (g, i) {
         var li = el('li', 'qa'), lab = labels[g.id];
         li.id = 'qa-' + g.id;
-        if (lab) li.classList.add(lab === 'Correct' ? 'is-correct' : 'is-wrong');
-        var body = el('div', 'qa-body');
+        if (lab) li.classList.add('is-picked');
         var q = el('p', 'qa-q'); q.appendChild(el('span', 'qa-n', String(i + 1))); q.appendChild(document.createTextNode(g.q));
-        body.appendChild(q);
-        body.appendChild(el('p', 'qa-a', g.a));
-        if (showKey) {
-          var k = el('p', 'qa-key ' + (g.cls === 'Correct' ? 'ok' : 'bad'), 'Key: ' + g.cls + (g.fix ? '. Right answer: ' + g.fix : ''));
-          body.appendChild(k);
-        }
-        li.appendChild(body);
-        var seg = el('div', 'qa-btns');
-        CLASSES.forEach(function (c) {
-          var b = el('button', 'qa-btn ' + (c.id === 'Correct' ? 'yes' : 'no'), c.id === 'Correct' ? '✓ Correct' : '✗ Wrong');
-          b.type = 'button'; b.disabled = locked; b.setAttribute('aria-pressed', lab === c.id ? 'true' : 'false');
-          b.setAttribute('aria-label', 'Mark answer ' + (i + 1) + ' ' + c.id);
+        li.appendChild(q);
+        var opts = el('div', 'qa-opts');
+        opts.setAttribute('role', 'group'); opts.setAttribute('aria-label', 'Answers to question ' + (i + 1));
+        g.options.forEach(function (text, j) {
+          var id = LETTERS[j], b = el('button', 'qa-opt');
+          b.type = 'button'; b.disabled = locked; b.setAttribute('aria-pressed', lab === id ? 'true' : 'false');
+          if (showKey && id === g.cls) b.classList.add('key-ok');
+          else if (showKey && lab === id) b.classList.add('key-bad');
+          b.appendChild(el('span', 'qa-letter', id)); b.appendChild(el('span', 'qa-text', text));
           b.addEventListener('click', function () {
             if (locked) return;
-            if (labels[g.id] === c.id) delete labels[g.id]; else labels[g.id] = c.id;
+            if (labels[g.id] === id) delete labels[g.id]; else labels[g.id] = id;
             render(); emit('change');
           });
-          seg.appendChild(b);
+          opts.appendChild(b);
         });
-        li.appendChild(seg);
+        li.appendChild(opts);
         root.appendChild(li);
       });
     }
@@ -126,7 +150,7 @@ window.GIGO = window.GIGO || {};
     id: 'llm', kind: 'text', label: 'LLM answer check', tagline: 'Label the Answers, Teach the Chatbot',
     classes: CLASSES, groundTruth: GT, evaluate: G.evaluateLabels,
     sim: 'LLMSim', view: 'LLMView', has3d: false,
-    card: { issue: 'Trustworthy AI', title: 'LLM answer check', place: 'Chatbot training data', blurb: 'Mark answers right or wrong. The chatbot learns whatever you approve.',
+    card: { issue: 'Trustworthy AI', title: 'LLM answer check', place: 'Chatbot training data', blurb: 'Pick the right answer to each question. The chatbot learns whatever you pick.',
       tags: ['Text labelling', 'LLM'] },
     outcomes: {
       safe: { label: 'Reliable chatbot', tone: 'good', text: 'Every test question answered correctly.' },
@@ -136,12 +160,12 @@ window.GIGO = window.GIGO || {};
     },
     outcomeLabel: 'Chatbot outcome',
     disclaimer: 'Educational simulation driven by simple rules, not a real language model.',
-    task: 'Mark each answer Correct or Wrong, then test the chatbot.',
-      purpose: 'A chatbot learns to repeat whatever its trainers approve. This project shows how marking wrong answers as correct teaches it to give confident, false answers.',
+    task: 'Pick the right answer to each question, then chat with the bot to test it.',
+      purpose: 'A chatbot learns to repeat whatever its trainers approve. This project shows how picking a wrong answer teaches it to give confident, false answers.',
     simTitle: 'Chatbot test',
-    idle: '<strong>Chatbot ready.</strong><p>It learns from the answers you approve.</p>',
-    resultTitle: 'Chatbot result', resultEmpty: 'Run to test the chatbot.',
-    stats: [['Unsafe replies', 'unsafe'], ['Hallucinations', 'hallucinations'], ['Not sure', 'unsure'], ['Spread to new questions', 'spread']],
+    idle: '<strong>Chatbot ready.</strong><p>It learns from the answers you pick. Press Start chat, then ask it anything.</p>',
+    resultTitle: 'Chatbot result', resultEmpty: 'Start a chat to test the chatbot.',
+    stats: [['Unsafe replies', 'unsafe'], ['Hallucinations', 'hallucinations'], ['Not sure', 'unsure']],
     critical: {
       unsafe: 'The chatbot learned this harmful answer and gave it to a user.'
     },
@@ -151,7 +175,7 @@ window.GIGO = window.GIGO || {};
     },
     advice: {
       critical: 'Check health and safety answers first. Approving one wrong answer can hurt someone.',
-      wrongClass: 'Read each answer closely: a wrong year or number still makes it wrong.',
+      wrongClass: 'Read every option closely: a wrong year or number looks a lot like the right one.',
       allGood: 'Every answer labelled correctly. The chatbot answered all test questions right.'
     }
   };
