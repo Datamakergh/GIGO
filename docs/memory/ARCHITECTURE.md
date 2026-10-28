@@ -19,7 +19,7 @@ ignore:
 ### GIGO app
 Annotate 10 fixed objects (left), rule-based top-down drive sim (right), feedback cards below.
 Pages: index.html (overview), projects.html (gallery, js/gallery.js), learn.html, play.html (simulator); js/nav.js injects the top nav. css/site.css = site pages + text-label/chat UI.
-Scenes added 2026-10-27: drone.js/drone-sim.js/drone-view.js, crop.js/crop-sim.js/crop-view.js, llm.js/llm-sim.js/llm-view.js/llm-pipeline.js; view-kit.js = shared canvas helpers + G.makeView.
+Scenes added 2026-10-27: drone.js/drone-sim.js/drone-view.js, crop.js/crop-sim.js/crop-view.js, llm.js/llm-sim.js/llm-view.js; view-kit.js = shared canvas helpers + G.makeView.
 Files: js/config.js (road ground truth, thresholds, wording, G.SCENARIOS + G.useScenario), js/warehouse.js (warehouse PPE scenario: classes, GT, art, G.drawWorker), js/ppe-sim.js + js/ppe-view.js (safety-gate sim core/renderer), js/evaluator.js (IoU, score, buildDetections), js/simulator.js (pure sim core, params P), js/sim-view.js, js/sim-3d.js (3D chase-cam renderer), js/scene.js, js/annotator.js, js/feedback.js, js/app.js, tests/run.js.
 Gotchas: GT boxes must not overlap (matching); critical objects = car_ahead, ped_cross, cyclist, traffic_light; sim tuned so loose box => near miss, missing => collision.
 
@@ -38,4 +38,3 @@ Gotchas: GT boxes must not overlap (matching); critical objects = car_ahead, ped
 - 2026-10-28: Sim canvas is now 800x500 (no dark bars). Views keep the 330-tall logical world and translate by (H-330)/2, extending scenery; drone census is a bottom strip over a full-bleed map, crop rows stretch to H. Legend sits above the sim stage (aligned with the class bar); stage is flex:none, aspect 800/500.
 - 2026-10-28: play.html panels use CSS subgrid (4 rows: head, class-bar/legend, stage, .panel-foot) so the label and sim stages align horizontally; stacked layout (<=1000px) falls back to flex.
 - 2026-10-28: LLM = multiple choice (4 options A-D, label = letter, g.cls = right letter) + live chat test: G.matchTopic keyword groups (llm.js), LLMSim.ask/finish, view.onAsk/onFinish/onLocate wired in app.js. Topics count once; unlabelled -> always "I'm not sure". #label-list sits in the stage grid row; chat is absolutely positioned in the sim stage.
-- 2026-10-28: LLM scene part 3 = pipeline rules (js/llm-pipeline.js, G.Pipeline.run pure + mount UI, #pipeline section shown only for kind:'text'). Each rule (format/cats/edge) has its own effect, verdict garbage|partial|quality from 3 downstream checks (no majority vote). Stacked layout: .qa-list drops contain:size (it collapsed to 0 height).

@@ -5,7 +5,7 @@ var fs = require('fs'), path = require('path'), vm = require('vm');
 var sandbox = { window: {} };
 sandbox.window.window = sandbox.window;
 vm.createContext(sandbox);
-['config', 'evaluator', 'simulator', 'warehouse', 'ppe-sim', 'drone', 'drone-sim', 'crop', 'crop-sim', 'llm', 'llm-sim', 'llm-pipeline'].forEach(function (f) {
+['config', 'evaluator', 'simulator', 'warehouse', 'ppe-sim', 'drone', 'drone-sim', 'crop', 'crop-sim', 'llm', 'llm-sim'].forEach(function (f) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'js', f + '.js'), 'utf8'), sandbox, { filename: f + '.js' });
 });
 var G = sandbox.window.GIGO;
@@ -207,19 +207,6 @@ ok(r.s.outcome === 'safe' && r.s.stats.asked === 1 && /1 of 10/.test(r.s.summary
 r = chat(labels(), ['hello']);
 ok(r.s.outcome === 'warnings', 'llm nothing matched -> warnings');
 G.useScenario('road');
-
-// ---- LLM pipeline rules
-function pipe(f, c, e) { return G.Pipeline.run({ format: f, cats: c, edge: e }); }
-var p = pipe('loose', 'loose', 'loose');
-ok(p.verdict === 'garbage' && !p.isJson, 'pipeline all loose -> garbage paragraph');
-p = pipe('strict', 'strict', 'strict');
-ok(p.verdict === 'quality' && JSON.parse(p.text).urgency === 'HIGH' && p.checks.every(function (k) { return k.pass; }), 'pipeline all strict -> quality JSON, urgency HIGH');
-p = pipe('strict', 'strict', 'loose');
-ok(p.verdict === 'partial' && p.urgency === 'MEDIUM' && !p.checks[2].pass, 'pipeline no edge rule -> partial, urgency MEDIUM');
-p = pipe('strict', 'loose', 'strict');
-ok(p.verdict === 'partial' && JSON.parse(p.text).mood && !p.checks[1].pass, 'pipeline loose categories -> partial, schema fails');
-p = pipe('loose', 'strict', 'strict');
-ok(p.verdict === 'garbage' && !p.checks.some(function (k) { return k.pass; }), 'pipeline loose format -> garbage even with strict rules');
 
 console.log(failed ? '\n' + failed + ' FAILED' : '\nall passed');
 process.exit(failed ? 1 : 0);

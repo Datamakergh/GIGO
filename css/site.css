@@ -228,48 +228,4 @@ a { color: inherit; }
 .purpose p { margin: 0; font-size: 15px; line-height: 1.5; color: #334155; max-width: 80ch; }
 .topbar #btn-startover { margin-left: auto; }
 
-/* LLM part 3: pipeline rules (js/llm-pipeline.js) */
-.pipeline { max-width: 1500px; margin: 0 auto 16px; width: calc(100% - 40px); background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; display: grid; gap: 16px; }
-.pipeline[hidden] { display: none; }
-.pipe-head h2 { font-size: 18px; display: flex; align-items: center; gap: 8px; }
-.pipe-head p { color: #475569; margin-top: 6px; max-width: 80ch; }
-.pipe-input { margin: 0; border: 1px solid #fcd34d; border-radius: 10px; padding: 12px 16px; background: #fffbeb; }
-.pipe-input figcaption { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #92400e; }
-.pipe-input blockquote { margin: 6px 0 0; font-size: 16px; color: var(--ink); }
-.pipe-rules { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-.pipe-rules fieldset { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px 12px; margin: 0; display: grid; gap: 8px; align-content: start; }
-.pipe-rules legend { font-weight: 800; padding: 0 6px; }
 .qn { color: var(--brand); }
-.pipe-opt { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--line); border-radius: 10px; padding: 10px; cursor: pointer; font-size: 14px; transition: border-color .15s, background .15s; }
-.pipe-opt:hover { border-color: #94a3b8; }
-.pipe-opt input { margin-top: 3px; accent-color: var(--brand); flex: none; }
-.pipe-opt b { display: block; font-size: 12px; color: var(--muted); }
-.pipe-opt:has(input:checked) { border-color: var(--brand); background: #eff6ff; }
-.pipe-opt:has(input:focus-visible) { outline: 3px solid #93c5fd; outline-offset: 2px; }
-.pipe-run { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-.pipe-run small { color: var(--muted); }
-.pipe-out { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; transition: opacity .2s; }
-.pipe-out.stale .pipe-col { opacity: .45; }
-.pipe-col h3 { font-size: 15px; margin-bottom: 8px; }
-.pipe-text { margin: 0; min-height: 230px; background: #0f172a; color: #e2e8f0; border-radius: 10px; padding: 14px 16px; font: 13px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
-.pipe-text.is-prose { font: 15px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-.pipe-text .muted { font-size: 13px; color: #94a3b8; }
-.j-key { color: #93c5fd; } .j-str { color: #86efac; } .j-num { color: #fbbf24; }
-.pipe-eval { min-height: 230px; border-radius: 10px; border: 1px solid var(--line); padding: 14px 16px; display: grid; gap: 8px; align-content: start; }
-.pipe-eval.garbage { background: #fef2f2; border-color: #fca5a5; --tone: var(--bad); }
-.pipe-eval.partial { background: #fffbeb; border-color: #fcd34d; --tone: var(--warn); }
-.pipe-eval.quality { background: #f0fdf4; border-color: #86efac; --tone: var(--ok); }
-.pipe-verdict { font-size: 20px; color: var(--tone); letter-spacing: .02em; }
-.pipe-eval.flash { animation: pipe-flash .9s var(--ease-out); }
-@keyframes pipe-flash { 0%, 40% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--tone) 35%, transparent); } 100% { box-shadow: 0 0 0 0 transparent; } }
-.pipe-checks { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 6px; }
-.pipe-checks li { display: grid; gap: 1px; background: rgba(255,255,255,.7); border-radius: 8px; padding: 6px 10px; font-size: 13px; }
-.pipe-checks li.ok b { color: var(--ok); } .pipe-checks li.bad b { color: var(--bad); }
-.pipe-checks span { color: #475569; }
-.pipe-busy { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 10px; background: rgba(255,255,255,.8); border-radius: 10px; font-weight: 700; color: var(--ink); }
-.pipe-busy[hidden] { display: none; }
-.spin { width: 22px; height: 22px; border: 3px solid #bfdbfe; border-top-color: var(--brand); border-radius: 50%; animation: pipe-spin .8s linear infinite; }
-@keyframes pipe-spin { to { transform: rotate(360deg); } }
-@media (max-width: 1000px) { .pipe-rules, .pipe-out { grid-template-columns: 1fr; } }
-@media (max-width: 560px) { .pipeline { width: calc(100% - 32px); padding: 16px; } }
-@media (prefers-reduced-motion: reduce) { .pipe-eval.flash { animation: none; } .spin { animation-duration: 2s; } }

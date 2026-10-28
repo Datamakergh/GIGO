@@ -211,8 +211,6 @@
     speed = 0.5; $('btn-speed').textContent = speed + '×'; $('btn-speed').hidden = text;
     ['annot-stage', 'class-bar', 'btn-delete', 'btn-labels', 'sim-canvas', 'legend'].forEach(function (n) { $(n).hidden = text; });
     $('label-list').hidden = !text; $('chat').hidden = !text;
-    $('pipeline').hidden = !text;
-    if (text) G.Pipeline.mount($('pipeline'));
     $('sim-hint').textContent = text ? 'Ask in your own words. The bot matches key words to the answers you picked.' : 'The coloured boxes show what the AI sees as the run plays out.';
     $('progress-label').textContent = text ? 'Answers labelled' : 'Objects labelled';
     $('scene-title').textContent = sc.card.title;
