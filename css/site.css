@@ -229,3 +229,7 @@ a { color: inherit; }
 .topbar #btn-startover { margin-left: auto; }
 
 .qn { color: var(--brand); }
+
+/* View Results toggle under the label/sim panels */
+.results-bar { max-width: 1500px; margin: 0 auto 16px; padding: 0 20px; display: flex; justify-content: center; }
+.results-bar[hidden], .results[hidden] { display: none; }

@@ -102,6 +102,7 @@
     det = G.buildDetections(ev);
     sim = S.create(det);
     G.Feedback.showScore(ev, { onLocate: locate });
+    clearResults();
     setStep(1);
     showIdle(false);
     phase = 'running'; setRunning(true);
@@ -130,8 +131,19 @@
     $('btn-key').disabled = false;
     var improved = history.length > 1 && history[history.length - 1].score > history[history.length - 2].score;
     setStep(improved ? 5 : 3);
-    $('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    $('results-bar').hidden = false;
+    $('results-bar').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
+
+  function showResults(on) {
+    $('results').hidden = !on;
+    var b = $('btn-results');
+    b.textContent = on ? 'Hide Results' : 'View Results';
+    b.setAttribute('aria-expanded', on ? 'true' : 'false');
+    if (on) $('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function clearResults() { $('results-bar').hidden = true; showResults(false); }
+  $('btn-results').addEventListener('click', function () { showResults($('results').hidden); });
 
   function locate(id) {
     annot.setShowKey(false); $('btn-key').setAttribute('aria-pressed', 'false');
@@ -189,7 +201,7 @@
   function startOver() {
     cancelAnimationFrame(raf);
     history = []; annot.setShowKey(false); $('btn-key').setAttribute('aria-pressed', 'false'); $('btn-key').disabled = true;
-    annot.clear(); G.Feedback.reset();
+    annot.clear(); G.Feedback.reset(); clearResults();
     phase = 'annotate'; setRunning(false); preview(); showIdle(true);
     $('btn-run').textContent = runLabel(false); setStep(0);
   }

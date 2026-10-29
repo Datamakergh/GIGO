@@ -88,7 +88,11 @@
   </section>
 </main>
 
-<section id="results" class="results" aria-label="Results and feedback">
+<div id="results-bar" class="results-bar" hidden>
+  <button id="btn-results" type="button" class="primary" aria-expanded="false" aria-controls="results">View Results</button>
+</div>
+
+<section id="results" class="results" aria-label="Results and feedback" hidden>
   <article class="card">
     <h3>Label quality</h3>
     <p id="score-empty" class="empty">Run to see your score.</p>
